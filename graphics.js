@@ -9,8 +9,8 @@ export function createGraphics(canvas,ground){
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
  const scene=new T.Scene();scene.background=new T.Color('#a4b9c3');scene.fog=new T.FogExp2('#a7b8bd',.00016);
  const camera=new T.PerspectiveCamera(49,innerWidth/innerHeight,.25,19000);
- const sun=new T.DirectionalLight('#fff0d3',3.1);sun.position.set(-500,800,-350);sun.castShadow=true;sun.shadow.mapSize.set(touch?1024:2048,touch?1024:2048);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;sun.shadow.camera.near=10;sun.shadow.camera.far=1600;sun.shadow.bias=-.0002;sun.shadow.normalBias=.15;scene.add(sun,sun.target);scene.add(new T.HemisphereLight('#c4d8ed','#78745c',1.2));
- const envReady=new HDRLoader().loadAsync('./assets/sky.hdr').then(hdr=>{hdr.mapping=T.EquirectangularReflectionMapping;scene.background=hdr;scene.backgroundIntensity=.85;scene.environment=hdr;scene.environmentIntensity=.65}).catch(()=>{});
+ const sun=new T.DirectionalLight('#fff0d3',3.1);sun.position.set(-500,800,-350);sun.castShadow=true;sun.shadow.mapSize.set(touch?1024:2048,touch?1024:2048);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;sun.shadow.camera.near=10;sun.shadow.camera.far=1600;sun.shadow.bias=-.0002;sun.shadow.normalBias=.15;scene.add(sun,sun.target);const hemi=new T.HemisphereLight('#c4d8ed','#78745c',1.2);scene.add(hemi);let lightMode=0,daySky=null;
+ const envReady=new HDRLoader().loadAsync('./assets/sky.hdr').then(hdr=>{hdr.mapping=T.EquirectangularReflectionMapping;daySky=hdr;if(lightMode===0)scene.background=hdr;scene.backgroundIntensity=.85;scene.environment=hdr;scene.environmentIntensity=.65}).catch(()=>{});
  const loader=new T.TextureLoader(),aniso=Math.min(touch?2:8,renderer.capabilities.getMaxAnisotropy());
  function tex(url,repeat=1,color=false){const t=loader.load(url);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(repeat,repeat);t.anisotropy=aniso;if(color)t.colorSpace=T.SRGBColorSpace;return t}
  const grass=tex('./assets/grass-color.jpg',300,true),grassN=tex('./assets/grass-normal.jpg',300),grassR=tex('./assets/grass-rough.jpg',300);
@@ -40,11 +40,55 @@ diffuseColor*=mix(sampleA,sampleB,blendTex);
  // Rubber deposits, seams and runway lamps supply local scale cues.
  const rubberMat=new T.MeshStandardMaterial({color:0x171a1c,transparent:true,opacity:.32,roughness:1,depthWrite:false});for(let i=0;i<28;i++)marking((Math.random()-.5)*12,150+Math.random()*450,.1+Math.random()*.45,20+Math.random()*100,rubberMat);
  const lampMat=new T.MeshBasicMaterial({color:0xffe2a1});const lampGeo=new T.SphereGeometry(.24,6,4);for(let z=0;z<2400;z+=55)for(const x of [-35,35])mesh(lampGeo,lampMat,[x,10.3,z]);
- const taxiMat=roadMat.clone();taxiMat.map=asphalt.clone();taxiMat.map.repeat.set(1,30);const taxi=mesh(new T.PlaneGeometry(24,2000),taxiMat,[112,10.07,1300]);taxi.rotation.x=-Math.PI/2;marking(112,1300,.3,2000,yellow);
- const concrete=new T.MeshStandardMaterial({color:0xa3a29a,roughness:.95});box([230,1,490],[214,9.8,1050],concrete);
+ // Large terminal apron; repeated details share instanced draws for tablets.
+ const taxiMat=roadMat.clone();taxiMat.map=asphalt.clone();taxiMat.map.repeat.set(1,100);
+ const concrete=new T.MeshStandardMaterial({color:0xa3a29a,roughness:.95});
  const hangarMat=new T.MeshStandardMaterial({color:0x9ba5a9,metalness:.35,roughness:.65}),roofMat=new T.MeshStandardMaterial({color:0x45545d,metalness:.4,roughness:.55}),glassMat=new T.MeshPhysicalMaterial({color:0x29434e,metalness:.3,roughness:.17,clearcoat:1});
- for(let i=0;i<4;i++){let z=880+i*115;box([65,18,72],[220,19,z],hangarMat);box([68,1.2,75],[220,28.7,z],roofMat);box([.3,13,56],[187.3,16.5,z],roofMat);for(let j=0;j<10;j++)box([.12,12,.12],[187.05,17,z-26+j*5.5],hangarMat)}
- box([14,30,14],[175,25,1410],concrete);box([23,6,23],[175,43,1410],glassMat);box([25,1,25],[175,46.5,1410],roofMat);
+ const terminalGlass=new T.MeshStandardMaterial({color:0x38596c,metalness:.55,roughness:.25,emissive:0x263e50,emissiveIntensity:.35});
+ const batches=new Map();function detail(s,p,mat){if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push({s,p})}
+ function pavement(x,z,w,l,mat=taxiMat){const m=mesh(new T.PlaneGeometry(w,l),mat,[x,10.04,z]);m.rotation.x=-Math.PI/2;m.castShadow=false;return m}
+ // Concrete joints and subtle variation are baked into one repeating texture.
+ const slabCanvas=document.createElement('canvas');slabCanvas.width=slabCanvas.height=256;const slab=slabCanvas.getContext('2d');slab.fillStyle='#9a9d9b';slab.fillRect(0,0,256,256);slab.fillStyle='#a4a6a3';slab.fillRect(1,1,126,126);slab.fillRect(129,129,126,126);slab.strokeStyle='#737a7c';slab.lineWidth=1;for(const a of [0,128,255]){slab.beginPath();slab.moveTo(a,0);slab.lineTo(a,256);slab.moveTo(0,a);slab.lineTo(256,a);slab.stroke()}
+ const slabs=new T.CanvasTexture(slabCanvas);slabs.wrapS=slabs.wrapT=T.RepeatWrapping;slabs.repeat.set(24,55);slabs.colorSpace=T.SRGBColorSpace;slabs.anisotropy=aniso;
+ pavement(615,1300,790,1750,new T.MeshStandardMaterial({map:slabs,roughness:.94}));
+ pavement(135,1200,32,2350);detail([.35,.015,2320],[135,10.09,1200],yellow);
+ pavement(295,1280,30,1740);detail([.35,.015,1720],[295,10.09,1280],yellow);
+ for(const z of [100,500,1000,1550,2100,2300]){pavement(84,z,115,30);detail([115,.015,.35],[84,10.09,z],yellow);if(z>=500&&z<=2100){pavement(214,z,160,30);detail([160,.015,.35],[214,10.09,z],yellow)}}
+ // Long glass terminal with three piers, 18 contact stands and articulated bridges.
+ detail([115,27,1480],[885,23.5,1300],hangarMat);detail([119,2,1484],[885,38,1300],roofMat);detail([.5,18,1460],[827.2,25,1300],terminalGlass);
+ for(let z=580;z<2030;z+=28)detail([1,22,1.2],[826.5,24,z],hangarMat);
+ const gatePaint=new T.MeshStandardMaterial({color:0xf1d16b,roughness:.9});
+ let gate=0;
+ for(const pierZ of [760,1300,1840]){
+ detail([380,15,50],[650,17.5,pierZ],hangarMat);detail([385,1.5,54],[650,25.7,pierZ],roofMat);
+ for(const side of [-1,1]){
+ detail([365,9,.4],[650,19,pierZ+side*25.2],terminalGlass);
+ for(const x of [495,625,755]){gate++;
+ const standZ=pierZ+side*140;
+ detail([.4,.02,135],[x,10.12,pierZ+side*130],gatePaint);
+ detail([95,.02,.4],[x,10.12,pierZ+side*210],paint);
+ for(const offset of [-48,48])detail([.3,.02,175],[x+offset,10.12,standZ],paint);
+ detail([12,6,43],[x-20,17,pierZ+side*45],hangarMat);detail([11,4,40],[x-20,18,pierZ+side*45],terminalGlass);
+ detail([30,6,11],[x-11,17,pierZ+side*71],hangarMat);detail([10,7,13],[x+4,17,pierZ+side*71],roofMat);
+ detail([2,5,2],[x-20,12.5,pierZ+side*63],roofMat);
+ const labelMat=new T.MeshBasicMaterial({map:textTexture('G'+gate,128,64,'#ffdc6b','#222d36')});const sign=mesh(new T.PlaneGeometry(12,6),labelMat,[x-20,22,pierZ+side*68]);if(side<0)sign.rotation.y=Math.PI;
+ // Tugs, baggage carts and servicing lanes give the gates a human scale.
+ detail([3,2,6],[x+33,11.2,standZ-25],paint);detail([2.7,1.4,2],[x+33,12.6,standZ-26],terminalGlass);
+ for(let j=0;j<3;j++)detail([2.2,1.5,3.8],[x+37,11,standZ+j*5],roofMat);
+ }
+ }
+ }
+ // Control tower and cargo hangars at the northern end of the apron.
+ detail([17,55,17],[975,37.5,2080],hangarMat);detail([33,9,33],[975,68,2080],terminalGlass);detail([36,2,36],[975,74,2080],roofMat);
+ for(let z=550;z<2100;z+=280){detail([60,19,120],[1005,19.5,z],hangarMat);detail([62,2,123],[1005,30,z],roofMat)}
+ const greenLights=[],blueLights=[];
+ for(let z=50;z<2380;z+=24){greenLights.push([135,10.3,z]);blueLights.push([117,10.3,z],[153,10.3,z])}
+ for(let z=440;z<2160;z+=24)greenLights.push([295,10.3,z]);
+ for(const z of [100,500,1000,1550,2100,2300])for(let x=40;x<= (z>=500&&z<=2100?295:135);x+=22)greenLights.push([x,10.3,z]);
+ function lights(points,color){const m=new T.InstancedMesh(new T.SphereGeometry(.5,6,4),new T.MeshBasicMaterial({color}),points.length);const d=new T.Object3D();points.forEach((p,i)=>{d.position.set(...p);d.updateMatrix();m.setMatrixAt(i,d.matrix)});scene.add(m)}
+ lights(greenLights,0x41ff99);lights(blueLights,0x4c8cff);
+ for(const z of [520,1060,1600,2140])for(const x of [370,800]){detail([.7,32,.7],[x,26,z],roofMat);detail([12,.8,2],[x,42,z],lampMat)}
+ for(const [mat,items] of batches){const group=new T.InstancedMesh(new T.BoxGeometry(1,1,1),mat,items.length),d=new T.Object3D();items.forEach(({s,p},i)=>{d.position.set(...p);d.scale.set(...s);d.updateMatrix();group.setMatrixAt(i,d.matrix)});group.castShadow=mat!==paint&&mat!==yellow&&mat!==gatePaint;group.receiveShadow=true;scene.add(group)}
  // Distant tree stands are instanced to keep draw calls bounded.
  let seed=8192;function rnd(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
  const treeCount=650;
@@ -58,7 +102,7 @@ diffuseColor*=mix(sampleA,sampleB,blendTex);
  }
  const foliageGeo=new T.BufferGeometry();foliageGeo.setAttribute('position',new T.Float32BufferAttribute(branchV,3));foliageGeo.setAttribute('uv',new T.Float32BufferAttribute(branchUv,2));foliageGeo.setIndex(branchIdx);foliageGeo.computeVertexNormals();
  const trunks=new T.InstancedMesh(new T.CylinderGeometry(.12,.45,15,6).translate(0,7.5,0),new T.MeshStandardMaterial({color:0x645548,roughness:1}),treeCount),leaves=new T.InstancedMesh(foliageGeo,foliageMat,treeCount);
- const dummy=new T.Object3D(),color=new T.Color();for(let i=0;i<treeCount;i++){const side=i%2?1:-1,x=side*(240+rnd()*1700),z=-1000+rnd()*5300,y=ground(x,z),size=.65+rnd()*1.3;dummy.position.set(x,y,z);dummy.scale.set(size,size,size);dummy.rotation.set(0,rnd()*7,0);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);leaves.setMatrixAt(i,dummy.matrix);color.setRGB(.7+rnd()*.3,.76+rnd()*.22,.65+rnd()*.3);leaves.setColorAt(i,color)}trunks.castShadow=leaves.castShadow=true;leaves.receiveShadow=true;scene.add(trunks,leaves);
+ const dummy=new T.Object3D(),color=new T.Color();for(let i=0;i<treeCount;i++){const side=i%2?1:-1,x=side*((side>0?1250:300)+rnd()*1700),z=-1000+rnd()*5300,y=ground(x,z),size=.65+rnd()*1.3;dummy.position.set(x,y,z);dummy.scale.set(size,size,size);dummy.rotation.set(0,rnd()*7,0);dummy.updateMatrix();trunks.setMatrixAt(i,dummy.matrix);leaves.setMatrixAt(i,dummy.matrix);color.setRGB(.7+rnd()*.3,.76+rnd()*.22,.65+rnd()*.3);leaves.setColorAt(i,color)}trunks.castShadow=leaves.castShadow=true;leaves.receiveShadow=true;scene.add(trunks,leaves);
 
 
  const white=new T.MeshPhysicalMaterial({color:0xf1f0e8,metalness:.22,roughness:.3,clearcoat:.8,clearcoatRoughness:.22});
@@ -112,5 +156,5 @@ diffuseColor*=mix(sampleA,sampleB,blendTex);
  function draw(s,dt){if(lastParts!==s.parts)build(s);const actual=s.state==='paused'?s.saved:s.state;for(let i=0;i<roots.length;i++){const root=roots[i];if(actual==='crashed'){const d=s.debris[i];if(!d){root.visible=false;continue}root.visible=true;root.position.set(d.pos.x,d.pos.y,d.pos.z);root.rotation.set(-d.p,d.y,d.r,'YXZ')}else{root.visible=true;const c=s.rotate(s.parts[i].center,s.pitch,s.roll,s.yaw);root.position.set(s.pos.x+c.x,s.pos.y+c.y,s.pos.z+c.z);root.rotation.set(-s.pitch,s.yaw,s.roll,'YXZ')}}gearRoot.visible=s.gear&&actual!=='crashed';gearRoot.position.set(s.pos.x,s.pos.y,s.pos.z);gearRoot.rotation.set(-s.pitch,s.yaw,s.roll,'YXZ');if(actual==='flight')for(const fan of fans){const e=s.systems.engines.find(e=>e.position.x===fan.userData.engineX);fan.rotation.z+=dt*(e?.running&&s.systems.fuel>0?18+s.throttle*50:2)}
  let desired,target=new T.Vector3(s.target.x,s.target.y,s.target.z);if(actual==='crashed'){desired=new T.Vector3(s.camera.x,s.camera.y,s.camera.z);desired.y=Math.max(desired.y,ground(desired.x,desired.z)+6)}else{const p=new T.Vector3(s.pos.x,s.pos.y,s.pos.z);const off=cameraOffsets[camMode].clone().multiplyScalar(s.aircraftFamily==='twin'?.78:1.08);if(s.state==='ready'){off.set(49,16,45)}off.multiplyScalar(Math.max(1,Math.pow(1.3/camera.aspect,.6)));off.applyAxisAngle(new T.Vector3(0,1,0),s.yaw);desired=p.clone().add(off);target=p.clone().add(new T.Vector3(0,0,camMode===2?80:0).applyAxisAngle(new T.Vector3(0,1,0),s.yaw));desired.y=Math.max(desired.y,ground(desired.x,desired.z)+3)}if(!camera.userData.initial){camera.position.copy(desired);camera.userData.initial=true}else camera.position.lerp(desired,1-Math.exp(-dt*4));camera.lookAt(target);sun.position.set(s.pos.x-420,s.pos.y+650,s.pos.z-260);sun.target.position.set(s.pos.x,s.pos.y,s.pos.z);updateEffects(s,dt);renderer.render(scene,camera);frames++;frameTime+=dt;if(frameTime>=2){const fps=Math.round(frames/frameTime);const el=document.getElementById('perf');if(el)el.textContent='WEBGL · '+quality+' · '+fps+' FPS';if(qualityMode===0){slowWindows=fps<28?slowWindows+1:0;if(slowWindows>=2&&quality!=='PERFORMANCE'){applyQuality(quality==='HIGH'?'BALANCED':'PERFORMANCE');slowWindows=0}}frames=0;frameTime=0}}
  function resize(){renderer.setSize(innerWidth,innerHeight,false);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix()}
- addEventListener('resize',resize);return{draw,nextQuality(){qualityMode=(qualityMode+1)%4;const mode=['AUTO','PERFORMANCE','BALANCED','HIGH'][qualityMode];applyQuality(qualityMode===0?(touch?'BALANCED':'HIGH'):mode);slowWindows=0;return mode},nextCamera(){camMode=(camMode+1)%3;return ['CHASE','EXTERIOR','NOSE'][camMode]},resetCamera(){camera.userData.initial=false},ready:envReady,renderer};
+ addEventListener('resize',resize);return{draw,nextLighting(){lightMode=(lightMode+1)%3;scene.background=lightMode===0?(daySky||new T.Color('#a4b9c3')):new T.Color(lightMode===1?'#68778e':'#101d32');scene.fog.color.set(lightMode===0?'#a7b8bd':lightMode===1?'#68778e':'#101d32');sun.intensity=[3.1,.65,.12][lightMode];hemi.intensity=[1.2,.65,.35][lightMode];scene.environmentIntensity=[.65,.3,.12][lightMode];terminalGlass.emissiveIntensity=lightMode?1.1:.35;return ['DAYLIGHT','DUSK','NIGHT'][lightMode]},nextQuality(){qualityMode=(qualityMode+1)%4;const mode=['AUTO','PERFORMANCE','BALANCED','HIGH'][qualityMode];applyQuality(qualityMode===0?(touch?'BALANCED':'HIGH'):mode);slowWindows=0;return mode},nextCamera(){camMode=(camMode+1)%3;return ['CHASE','EXTERIOR','NOSE'][camMode]},resetCamera(){camera.userData.initial=false},ready:envReady,renderer};
 }
