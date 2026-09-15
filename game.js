@@ -34,6 +34,7 @@ for(const side of [-1,1]){m.push(box(side*(radius-.08),.25,1,.14,.42,jumbo?24:21
 let parts=[];
 function buildAircraft(){const factories={twin:()=>trainerMeshes,dc10:()=>airliner('dc10'),b747:()=>airliner('b747')};const factory=factories[spec().geometry];if(!factory)throw new Error('Unregistered aircraft geometry: '+spec().geometry);const meshes=factory();parts=meshes.map(mesh=>{const c=mul(mesh.verts.reduce((a,b)=>add(a,b),V()),1/mesh.verts.length);return{...mesh,center:c,verts:mesh.verts.map(v=>sub(v,c))}})}
 buildAircraft();
+let lastEngineGauges='';
 let currentConfig=null,livery=LIVERIES[0],cabin=createCabin(0,0),massFactor=1,parking=true,taxiAssist=false,route=[],pushRemaining=0,reportShown=false,tripSeconds=0;
 function resetTrip(){
  const c=CABINS[aircraft],p=currentConfig?.passengers??0;cabin=createCabin(p,currentConfig?c.crew:0);massFactor=currentConfig?loadFactor(aircraft,p,currentConfig.fuel):1;
@@ -49,6 +50,10 @@ function startConfigured(config){
 }
 function onGround(){const phase=state==='paused'?saved:state;return ['parked','pushback','taxi','landed'].includes(phase)}
 function startPushback(){if(state!=='parked')return;parking=false;throttle=0;state='pushback';pushRemaining=70;clearKeys();gearUI()}
+function stopPushback(){if(state!=='pushback')return;state='taxi';pushRemaining=0;parking=false;taxiAssist=false;route=[];vel=V();throttle=0;clearKeys();gearUI()}
+function setThrottle(value){if(!['taxi','flight'].includes(state))return;taxiAssist=false;assist=false;throttle=clamp(Number(value)/100,0,1)}
+function headingDegrees(angle){return ((Math.round(angle*180/Math.PI)%360)+360)%360}
+function enginePercent(e){return systems.fuel>0&&e.running&&!e.onFire&&!['crashed','ready','landed'].includes(state==='paused'?saved:state)?Math.round(throttle*100):0}
 function toggleTaxi(){if(state!=='taxi')return;if(taxiAssist){taxiAssist=false;throttle=0;return}parking=false;taxiAssist=true;const g=spawnPoint({...currentConfig,start:'gate'});route=taxiRoute(g,currentConfig?.runway||'01');throttle=.25}
 function groundStep(dt){
  if(tickSystems(systems,dt,state==='pushback'?0:throttle,spec())){crash(false,'FIRE DAMAGE');return}
@@ -103,19 +108,26 @@ $('repair').onclick=()=>{if(!['flight','taxi','parked','pushback'].includes(stat
 $('quality').onclick=()=>{$('quality').textContent='GRAPHICS '+graphics.nextQuality()};
 function updateFlightUI(){
  const actual=state==='paused'?saved:state;
- $('show-report').classList.toggle('hidden',!reportShown);$('heading').textContent=String(Math.round((yaw*180/Math.PI+3600)%360)).padStart(3,'0');$('aboard').textContent=cabin.total;
+ $('show-report').classList.toggle('hidden',!reportShown);$('heading').textContent=String(headingDegrees(yaw)).padStart(3,'0');$('aboard').textContent=cabin.total;
  $('flight-identity').textContent=names[aircraft]+' · '+livery.name;
  $('parking').classList.toggle('hidden',!onGround());$('parking').classList.toggle('engaged',parking);$('parking').textContent='PARKING BRAKE '+(parking?'ON':'OFF');$('parking').disabled=state==='paused';
- $('pushback').classList.toggle('hidden',!['parked','pushback'].includes(actual));$('pushback').disabled=state!=='parked';$('pushback').textContent=actual==='pushback'?'PUSHING BACK':'PUSHBACK';
+ $('pushback').classList.toggle('hidden',!['parked','pushback'].includes(actual));$('pushback').disabled=state==='paused';$('pushback').textContent=actual==='pushback'?'STOP PUSHBACK':'PUSHBACK';
  $('taxi-guide').classList.toggle('hidden',actual!=='taxi'||currentConfig?.start==='runway');$('taxi-guide').disabled=state!=='taxi';$('taxi-guide').textContent=taxiAssist?'STOP TAXI ASSIST':'TAXI TO RUNWAY';
  if(state==='parked')$('notice').textContent='AT GATE · PASSENGERS ABOARD · SELECT PUSHBACK';
  if(state==='pushback')$('notice').textContent=parking?'PUSHBACK PAUSED · RELEASE PARKING BRAKE':'PUSHING BACK · '+Math.ceil(pushRemaining)+' M';
  if(state==='taxi')$('notice').textContent=taxiAssist?'TAXI ASSIST · FOLLOWING TAXIWAYS':parking?'PARKING BRAKE ON · RELEASE TO MOVE':len(vel)>65*Math.sqrt(massFactor)?'ROTATE · PULL JOYSTICK DOWN / HOLD ↓':'TAXI / TAKEOFF · THROTTLE UP, PULL BACK AT '+Math.round(65*Math.sqrt(massFactor)*1.944)+' KT';
  if(state==='crashed'&&!cabin.final)$('notice').textContent=cabin.phase==='descending'?'AIRFRAME BREAKUP · AWAITING GROUND IMPACT':'EVACUATING · '+Math.max(0,20-Math.floor(cabin.elapsed))+' SEC · REPORT PENDING';
+ $('throttle-slider').value=Math.round(throttle*100);$('throttle-slider').disabled=!['flight','taxi'].includes(state);$('power-value').textContent=Math.round(throttle*100)+'%';
+ const gauges=systems.engines.map((e,i)=>'<div class="engine-gauge '+(!e.running||e.onFire?'fault':'')+'"><small>ENG '+(i+1)+'</small><b>'+enginePercent(e)+'%</b><span>'+(e.onFire?'FIRE':!e.running||systems.fuel<=0?'OFF':'POWER')+'</span></div>').join('');if(gauges!==lastEngineGauges){$('engine-gauges').innerHTML=gauges;lastEngineGauges=gauges}
+ const hdg=headingDegrees(yaw);$('compass-rose').setAttribute('transform','rotate('+(-hdg)+' 60 60)');$('compass-value').textContent=String(hdg).padStart(3,'0')+'°';
+ const mapX=22+pos.x*.052,mapY=170-pos.z*.06;const off=mapX<8||mapX>122||mapY<8||mapY>178;
+ $('map-aircraft').setAttribute('transform','translate('+clamp(mapX,8,122)+' '+clamp(mapY,8,178)+') rotate('+hdg+')');$('nav-distance').textContent=(Math.hypot(pos.x,pos.z-1200)/1000).toFixed(1)+' KM TO AIRPORT'+(off?' · OFF MAP':'');
  $('gear').disabled=systems.gearJammed||onGround();$('assist').disabled=state!=='flight';
 }
 $('parking').onclick=()=>{if(onGround()&&state!=='paused'){parking=!parking;taxiAssist=false;throttle=0;clearKeys()}};
-$('pushback').onclick=startPushback;$('taxi-guide').onclick=toggleTaxi;
+$('pushback').onclick=()=>state==='pushback'?stopPushback():startPushback();
+$('throttle-slider').oninput=e=>setThrottle(e.target.value);
+$('nav-toggle').onclick=()=>{const el=$('nav-map');el.classList.toggle('hidden');$('nav-toggle').setAttribute('aria-expanded',String(!el.classList.contains('hidden')))};$('taxi-guide').onclick=toggleTaxi;
 $('settings-toggle').onclick=()=>{const el=$('settings');el.classList.toggle('hidden');$('settings-toggle').setAttribute('aria-expanded',String(!el.classList.contains('hidden')))};
 $('close-settings').onclick=()=>{$('settings').classList.add('hidden');$('settings-toggle').setAttribute('aria-expanded','false')};
 $('show-report').onclick=()=>showReport(state==='landed'||state==='paused'&&saved==='landed');

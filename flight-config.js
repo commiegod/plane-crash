@@ -1,9 +1,105 @@
-// Original liveries and game configurations; capacities are chosen cabin layouts.
+// Airline-inspired paint and game configurations; capacities are chosen cabin layouts.
 export const LIVERIES=[
- {id:'horizon',name:'Horizon Air',label:'HORIZON',color:'#143d5a',accent:'#d0b276'},
- {id:'coastal',name:'Coastal Airways',label:'COASTAL',color:'#087f98',accent:'#b6f3f0'},
- {id:'aurora',name:'Aurora Jet',label:'AURORA',color:'#673bb0',accent:'#e8c5ff'},
- {id:'plain',name:'Unpainted',label:'',color:'#d7dce1',accent:'#ffffff'}
+ {
+  "id": "delta",
+  "name": "Delta Air Lines",
+  "label": "DELTA",
+  "logo": "./assets/airlines/DAL.png",
+  "color": "#071d49",
+  "accent": "#c8102e",
+  "ratio": 6.521739130434782,
+  "body": "#f4f5f5"
+ },
+ {
+  "id": "american",
+  "name": "American Airlines",
+  "label": "American",
+  "logo": "./assets/airlines/AAL.png",
+  "color": "#164b80",
+  "accent": "#d22538",
+  "ratio": 2.577777777777778,
+  "body": "#d4d8db"
+ },
+ {
+  "id": "united",
+  "name": "United Airlines",
+  "label": "UNITED",
+  "logo": "./assets/airlines/UAL.png",
+  "color": "#005daa",
+  "accent": "#5eb6e4",
+  "ratio": 5.769230769230769,
+  "body": "#f5f6f6"
+ },
+ {
+  "id": "southwest",
+  "name": "Southwest Airlines",
+  "label": "Southwest",
+  "logo": "./assets/airlines/SWA.png",
+  "color": "#304cb2",
+  "accent": "#f9b612",
+  "ratio": 6.521739130434782,
+  "body": "#304cb2"
+ },
+ {
+  "id": "emirates",
+  "name": "Emirates",
+  "label": "Emirates",
+  "logo": "./assets/airlines/UAE.png",
+  "color": "#d71920",
+  "accent": "#00843d",
+  "ratio": 1.4444444444444444,
+  "body": "#f6f5f0"
+ },
+ {
+  "id": "qatar",
+  "name": "Qatar Airways",
+  "label": "QATAR",
+  "logo": "./assets/airlines/QTR.png",
+  "color": "#5c0632",
+  "accent": "#aaaeb2",
+  "ratio": 3.27027027027027,
+  "body": "#e6e6e7"
+ },
+ {
+  "id": "british",
+  "name": "British Airways",
+  "label": "BRITISH AIRWAYS",
+  "logo": "./assets/airlines/BAW.png",
+  "color": "#08264c",
+  "accent": "#c8102e",
+  "ratio": 2.488888888888889,
+  "body": "#f6f6f5"
+ },
+ {
+  "id": "lufthansa",
+  "name": "Lufthansa",
+  "label": "Lufthansa",
+  "logo": "./assets/airlines/DLH.png",
+  "color": "#071d49",
+  "accent": "#ffffff",
+  "ratio": 5.769230769230769,
+  "body": "#f6f6f5"
+ },
+ {
+  "id": "airfrance",
+  "name": "Air France",
+  "label": "AIRFRANCE",
+  "logo": "./assets/airlines/AFR.png",
+  "color": "#051039",
+  "accent": "#ed2939",
+  "ratio": 11.538461538461538,
+  "body": "#f6f6f5"
+ },
+ {
+  "id": "singapore",
+  "name": "Singapore Airlines",
+  "label": "SINGAPORE AIRLINES",
+  "logo": "./assets/airlines/SIA.png",
+  "color": "#092345",
+  "accent": "#d4a548",
+  "ratio": 2.7333333333333334,
+  "body": "#f4f3ed"
+ }
 ];
 export const CABINS={twin:{capacity:8,crew:2,emptyMass:4000},dc10:{capacity:270,crew:10,emptyMass:120000},b747:{capacity:416,crew:16,emptyMass:180000}};
 export const MODES=[{id:'departure',name:'Full departure',caption:'Gate to runway. Push back, taxi and take off.',mark:'01'}, {id:'free',name:'Free flight',caption:'Start above the airport and explore.',mark:'02'},{id:'approach',name:'Landing practice',caption:'A stabilized approach with optional assistance.',mark:'03'},{id:'sandbox',name:'Failure sandbox',caption:'Experiment with systems and emergency landings.',mark:'04'}];
