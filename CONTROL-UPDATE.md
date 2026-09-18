@@ -12,3 +12,7 @@ Validation: simulation checks pass for all aircraft and both runway directions, 
 ## September 18 pacing update
 
 Crash results finalize immediately at ground impact, without an evacuation countdown. Airborne breakup reports finalize on the first fuselage ground contact. Fire and exit effects are resolved instantly using the existing abstract outcome rules. Pushback covers the same 70 m in 7 seconds, supports proportional joystick or keyboard steering and braking, and retains Stop Pushback. Automatic completion still sets the parking brake. Tests cover immediate and stable reports, airborne contact, pushback duration, steering and braking, plus all 18 gate routes.
+
+## September 18 report and grass correction
+
+Crash results finalize at impact but no longer open automatically. A highlighted View Crash Report button appears at the top of the action rail; the player can open, dismiss and reopen the report while debris continues moving. Level grass supports taxiing with increased rolling resistance. Runway overruns and gentle gear-down grass touchdowns enter manual taxi rather than automatically crashing. Terrain gradients sampled across a 6 m footprint reject slopes above 0.32 or terrain-following vertical speed above 5 m/s; these are game thresholds, not certified aircraft limits. Buildings and hard landings still cause crashes. Regression tests cover all aircraft on grass, overruns, steep terrain, and report opening only on player input.
