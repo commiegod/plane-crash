@@ -8,3 +8,7 @@
 - Rounded translucent action buttons and tablet layouts.
 
 Validation: simulation checks pass for all aircraft and both runway directions, all 18 gate routes, safe/unsafe landing, cabin accounting, failures, mid-pushback position preservation, throttle takeover and pause, engine-out percentages and heading wrap. Browser checks cover airline cards, pushback cancellation, throttle slider, navigation and landscape/portrait tablet layouts; no browser errors observed. Physical iPad Safari remains untested.
+
+## September 18 pacing update
+
+Crash results finalize immediately at ground impact, without an evacuation countdown. Airborne breakup reports finalize on the first fuselage ground contact. Fire and exit effects are resolved instantly using the existing abstract outcome rules. Pushback covers the same 70 m in 7 seconds, supports proportional joystick or keyboard steering and braking, and retains Stop Pushback. Automatic completion still sets the parking brake. Tests cover immediate and stable reports, airborne contact, pushback duration, steering and braking, plus all 18 gate routes.
