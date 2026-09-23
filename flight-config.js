@@ -102,7 +102,14 @@ export const LIVERIES=[
  }
 ];
 export const CABINS={twin:{capacity:8,crew:2,emptyMass:4000},dc10:{capacity:270,crew:10,emptyMass:120000},b747:{capacity:416,crew:16,emptyMass:180000}};
-export const MODES=[{id:'departure',name:'Full departure',caption:'Gate to runway. Push back, taxi and take off.',mark:'01'}, {id:'free',name:'Free flight',caption:'Start above the airport and explore.',mark:'02'},{id:'approach',name:'Landing practice',caption:'A stabilized approach with optional assistance.',mark:'03'},{id:'sandbox',name:'Failure sandbox',caption:'Experiment with systems and emergency landings.',mark:'04'}];
+CABINS['c172']={"capacity": 3, "crew": 1, "emptyMass": 767};
+CABINS['dc3']={"capacity": 28, "crew": 3, "emptyMass": 7650};
+CABINS['a320']={"capacity": 180, "crew": 6, "emptyMass": 42600};
+CABINS['b737']={"capacity": 189, "crew": 6, "emptyMass": 41400};
+CABINS['dc9']={"capacity": 115, "crew": 5, "emptyMass": 25000};
+CABINS['g650']={"capacity": 16, "crew": 3, "emptyMass": 24500};
+CABINS['c130']={"capacity": 0, "crew": 3, "emptyMass": 34300};
+export const MODES=[{id:'departure',name:'Take off',caption:'Start on the runway, or choose a gate for the full trip.',mark:'01'}, {id:'free',name:'Explore the sky',caption:'Start in the air. Steer around the airport and mountains.',mark:'02'},{id:'approach',name:'Practice landing',caption:'Start near the runway. Landing help is on until you steer.',mark:'03'},{id:'sandbox',name:'Emergency lab',caption:'Choose a problem and see if you can land safely.',mark:'04'}];
 export const GATES=[];
 for(const pier of [760,1300,1840])for(const side of [-1,1])for(const x of [495,625,755])GATES.push({id:'g'+(GATES.length+1),name:'Gate '+(GATES.length+1),x,z:pier+side*140,yaw:side<0?0:Math.PI,side,pier});
 export const RUNWAYS=[{id:'01',name:'Runway 01',x:0,z:120,yaw:0},{id:'19',name:'Runway 19',x:0,z:2280,yaw:Math.PI}];

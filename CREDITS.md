@@ -13,3 +13,6 @@ Aircraft geometry, livery, airport geometry, particle sprites, UI, and game code
 
 ## Airline decals (September 15 control update)
 Ten representative global airlines: Delta, American, United, Southwest, Emirates, Qatar Airways, British Airways, Lufthansa, Air France and Singapore Airlines. This is a representative selection, not a ranked popularity claim. Logo PNGs are served locally, sourced from https://github.com/imgmongelli/airlines-logos-dataset/tree/master/images (DAL, AAL, UAL, SWA, UAE, QTR, BAW, DLH, AFR, SIA). Airline trademarks belong to their respective owners. No affiliation or endorsement is implied. Paint colors, placement and cropped fin emblems are game adaptations to the available procedural aircraft, not exact fleet-specific replicas. Source images are low-resolution; higher-resolution vector decals remain a visual improvement opportunity.
+
+## September 22 aircraft expansion
+The seven new airframes are original procedural geometry. Manufacturer and museum references, model limitations, and the youth UX review are documented in [FLEET-AND-UX-REVIEW.md](./FLEET-AND-UX-REVIEW.md). No aircraft meshes or textures were extracted from Project Flight or Roblox.
