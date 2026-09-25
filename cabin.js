@@ -5,11 +5,11 @@ export function createCabin(passengers,crew){
  const total=passengers+crew,a=Math.ceil(total/3),b=Math.ceil((total-a)/2);
  return {passengers,crew,total,sections:[a,b,total-a-b].map((occupants,i)=>({name:['Forward','Center','Rear'][i],occupants,survivors:occupants,injured:0,fatalities:0,damage:0,evacuated:0})),phase:'aboard',elapsed:0,fire:0,exits:1,final:false};
 }
-export function startIncident(cabin,{speed,sink,bank,airborne,fire,gear,cause}){
+export function startIncident(cabin,{speed,sink,bank,airborne,fire,gear,cause,damage}){
  cabin.phase=airborne?'descending':'impact';cabin.elapsed=0;cabin.fire=cabinClamp(fire);cabin.cause=cause;
- const severity=cabinClamp(Math.abs(sink)/35+Math.max(0,speed-35)/160+Math.abs(bank)*.2+(gear?0:.08)+(airborne||cause==='ONBOARD EXPLOSION'?.65:0));
+ const severity=damage?.severity??cabinClamp(Math.abs(sink)/35+Math.max(0,speed-35)/160+Math.abs(bank)*.2+(gear?0:.08)+(airborne||cause==='ONBOARD EXPLOSION'?.65:0));
  cabin.exits=cabinClamp(1-severity*.7,.15,1);
- cabin.sections.forEach((s,i)=>{s.damage=cabinClamp(severity*[1.13,1,.87][i]);s.fatalities=Math.min(s.occupants,Math.floor(s.occupants*cabinClamp((s.damage-.18)*1.18)));s.survivors=s.occupants-s.fatalities;s.injured=Math.floor(s.survivors*s.damage*.7)});
+ cabin.sections.forEach((s,i)=>{s.damage=damage?.mode==='fragmented'?1:cabinClamp(severity*[1.13,1,.87][i]);s.fatalities=damage?.mode==='fragmented'?s.occupants:Math.min(s.occupants,Math.floor(s.occupants*cabinClamp((s.damage-.18)*1.18)));s.survivors=s.occupants-s.fatalities;s.injured=Math.floor(s.survivors*s.damage*.7)});
  cabin.impact={speed,sink,bank,airborne};
 }
 export function tickCabin(cabin,dt,grounded){
