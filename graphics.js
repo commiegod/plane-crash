@@ -1,21 +1,26 @@
+import {partitionPavement} from './airport-surfaces.js';
 import * as T from './assets/three.module.js';
 import { HDRLoader } from './assets/HDRLoader.js';
 
 export function createGraphics(canvas,ground){
  const touch=globalThis.matchMedia?.('(any-pointer:coarse)').matches||false;
- const renderer=new T.WebGLRenderer({canvas,antialias:!touch,powerPreference:'high-performance'});
+ const renderer=new T.WebGLRenderer({canvas,antialias:!touch,logarithmicDepthBuffer:true,powerPreference:'high-performance'});
  renderer.setPixelRatio(Math.min(devicePixelRatio,touch?1:1.6));renderer.setSize(innerWidth,innerHeight,false);
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
  const scene=new T.Scene();scene.background=new T.Color('#a4b9c3');scene.fog=new T.FogExp2('#a7b8bd',.00016);
- const camera=new T.PerspectiveCamera(49,innerWidth/innerHeight,.25,19000);
+ const camera=new T.PerspectiveCamera(49,innerWidth/innerHeight,1,19000);
  const sun=new T.DirectionalLight('#fff0d3',3.1);sun.position.set(-500,800,-350);sun.castShadow=true;sun.shadow.mapSize.set(touch?1024:2048,touch?1024:2048);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;sun.shadow.camera.near=10;sun.shadow.camera.far=1600;sun.shadow.bias=-.0002;sun.shadow.normalBias=.15;scene.add(sun,sun.target);const hemi=new T.HemisphereLight('#c4d8ed','#78745c',1.2);scene.add(hemi);let lightMode=0,daySky=null;
  const envReady=new HDRLoader().loadAsync('./assets/sky.hdr').then(hdr=>{hdr.mapping=T.EquirectangularReflectionMapping;daySky=hdr;if(lightMode===0)scene.background=hdr;scene.backgroundIntensity=.85;scene.environment=hdr;scene.environmentIntensity=.65}).catch(()=>{});
  const loader=new T.TextureLoader(),aniso=Math.min(touch?2:8,renderer.capabilities.getMaxAnisotropy());
  function tex(url,repeat=1,color=false){const t=loader.load(url);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(repeat,repeat);t.anisotropy=aniso;if(color)t.colorSpace=T.SRGBColorSpace;return t}
  const grass=tex('./assets/grass-color.jpg',300,true),grassN=tex('./assets/grass-normal.jpg',300),grassR=tex('./assets/grass-rough.jpg',300);
  const terrainMat=new T.MeshStandardMaterial({map:grass,normalMap:grassN,roughnessMap:grassR,normalScale:new T.Vector2(.6,.6),color:0x99aa7d,roughness:1});
- terrainMat.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vTerrain;').replace('#include <begin_vertex>','#include <begin_vertex>\nvTerrain=position;');shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
+ terrainMat.onBeforeCompile=shader=>{
+ // Do not draw hidden terrain under pavement, even on low precision mobile GPUs.
+ const paved=airportPavements.map(r=>`(vTerrain.x>=${(r.x-r.w/2).toFixed(3)}&&vTerrain.x<=${(r.x+r.w/2).toFixed(3)}&&vTerrain.z>=${(r.z-r.l/2).toFixed(3)}&&vTerrain.z<=${(r.z+r.l/2).toFixed(3)})`).join('||');
+ shader.fragmentShader=shader.fragmentShader.replace('#include <clipping_planes_fragment>',`#include <clipping_planes_fragment>\nif(vTerrain.x>=-34.0&&vTerrain.x<=1010.0&&vTerrain.z>=0.0&&vTerrain.z<=2400.0){if(${paved})discard;}`);
+shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vTerrain;').replace('#include <begin_vertex>','#include <begin_vertex>\nvTerrain=position;');shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>', `#ifdef USE_MAP
 vec4 sampleA=texture2D(map,vMapUv);
 vec2 uvB=mat2(.71,-.71,.71,.71)*vMapUv*.743+vec2(17.3,8.9);
 vec4 sampleB=texture2D(map,uvB);
@@ -31,8 +36,9 @@ diffuseColor*=mix(sampleA,sampleB,blendTex);
  const paint=new T.MeshStandardMaterial({color:0xe0ded0,roughness:.86}),yellow=new T.MeshStandardMaterial({color:0xd3ac43,roughness:.9});
  function mesh(geo,mat,p,parent=scene){const m=new T.Mesh(geo,mat);m.position.set(...p);m.castShadow=true;m.receiveShadow=true;parent.add(m);return m}
  function box(s,p,mat,parent=scene){return mesh(new T.BoxGeometry(...s),mat,p,parent)}
- function marking(x,z,w,l,mat=paint){const m=mesh(new T.PlaneGeometry(w,l),mat,[x,10.08,z]);m.rotation.x=-Math.PI/2;m.castShadow=false;return m}
- const runway=mesh(new T.PlaneGeometry(68,2400),roadMat,[0,10.03,1200]);runway.rotation.x=-Math.PI/2;runway.castShadow=false;
+ const decalMaterials=new Map();function decalMaterial(mat){if(!decalMaterials.has(mat)){const copy=mat.clone();copy.depthWrite=false;copy.polygonOffset=true;copy.polygonOffsetFactor=-1;copy.polygonOffsetUnits=-2;copy.userData.groundMarking=true;decalMaterials.set(mat,copy)}return decalMaterials.get(mat)}
+ function marking(x,z,w,l,mat=paint){mat=decalMaterial(mat);const m=mesh(new T.PlaneGeometry(w,l),mat,[x,10.08,z]);m.rotation.x=-Math.PI/2;m.castShadow=false;m.renderOrder=2;return m}
+ const airportPavements=[{x:0,z:1200,w:68,l:2400,mat:roadMat,priority:3}];
  for(let z=25;z<2380;z+=55)marking(0,z,1,28);for(const x of [-32,32])marking(x,1200,.6,2390);for(const z of [32,2368])for(let x=-25;x<=25;x+=7)marking(x,z,3,35);
  for(const z of [220,2130])for(const x of [-15,15])marking(x,z,6,45);
  function textTexture(text,w=1024,h=256,fg='#eff1e8',bg=null){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d');if(bg){g.fillStyle=bg;g.fillRect(0,0,w,h)}g.fillStyle=fg;g.font='bold '+Math.floor(h*.66)+'px Arial';g.textAlign='center';g.textBaseline='middle';g.fillText(text,w/2,h/2,w*.92);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.anisotropy=aniso;return t}
@@ -41,12 +47,12 @@ diffuseColor*=mix(sampleA,sampleB,blendTex);
  const rubberMat=new T.MeshStandardMaterial({color:0x171a1c,transparent:true,opacity:.32,roughness:1,depthWrite:false});for(let i=0;i<28;i++)marking((Math.random()-.5)*12,150+Math.random()*450,.1+Math.random()*.45,20+Math.random()*100,rubberMat);
  const lampMat=new T.MeshBasicMaterial({color:0xffe2a1});const lampGeo=new T.SphereGeometry(.24,6,4);for(let z=0;z<2400;z+=55)for(const x of [-35,35])mesh(lampGeo,lampMat,[x,10.3,z]);
  // Large terminal apron; repeated details share instanced draws for tablets.
- const taxiMat=roadMat.clone();taxiMat.map=asphalt.clone();taxiMat.map.repeat.set(1,100);
+ const taxiMat=roadMat.clone();taxiMat.map=tex('./assets/asphalt-color.jpg',1,true);taxiMat.map.repeat.set(1,100);
  const concrete=new T.MeshStandardMaterial({color:0xa3a29a,roughness:.95});
  const hangarMat=new T.MeshStandardMaterial({color:0x9ba5a9,metalness:.35,roughness:.65}),roofMat=new T.MeshStandardMaterial({color:0x45545d,metalness:.4,roughness:.55}),glassMat=new T.MeshPhysicalMaterial({color:0x29434e,metalness:.3,roughness:.17,clearcoat:1});
  const terminalGlass=new T.MeshStandardMaterial({color:0x38596c,metalness:.55,roughness:.25,emissive:0x263e50,emissiveIntensity:.35});
- const batches=new Map();function detail(s,p,mat){if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push({s,p})}
- function pavement(x,z,w,l,mat=taxiMat){const m=mesh(new T.PlaneGeometry(w,l),mat,[x,10.04,z]);m.rotation.x=-Math.PI/2;m.castShadow=false;return m}
+ const batches=new Map();function detail(s,p,mat){if(s[1]<.05)mat=decalMaterial(mat);if(!batches.has(mat))batches.set(mat,[]);batches.get(mat).push({s,p})}
+ function pavement(x,z,w,l,mat=taxiMat){airportPavements.push({x,z,w,l,mat,priority:mat===taxiMat?2:1})}
  // Concrete joints and subtle variation are baked into one repeating texture.
  const slabCanvas=document.createElement('canvas');slabCanvas.width=slabCanvas.height=256;const slab=slabCanvas.getContext('2d');slab.fillStyle='#9a9d9b';slab.fillRect(0,0,256,256);slab.fillStyle='#a4a6a3';slab.fillRect(1,1,126,126);slab.fillRect(129,129,126,126);slab.strokeStyle='#737a7c';slab.lineWidth=1;for(const a of [0,128,255]){slab.beginPath();slab.moveTo(a,0);slab.lineTo(a,256);slab.moveTo(0,a);slab.lineTo(256,a);slab.stroke()}
  const slabs=new T.CanvasTexture(slabCanvas);slabs.wrapS=slabs.wrapT=T.RepeatWrapping;slabs.repeat.set(24,55);slabs.colorSpace=T.SRGBColorSpace;slabs.anisotropy=aniso;
@@ -54,6 +60,12 @@ diffuseColor*=mix(sampleA,sampleB,blendTex);
  pavement(135,1200,32,2350);detail([.35,.015,2320],[135,10.09,1200],yellow);
  pavement(295,1280,30,1740);detail([.35,.015,1720],[295,10.09,1280],yellow);
  for(const z of [100,500,1000,1550,2100,2300]){pavement(84,z,115,30);detail([115,.015,.35],[84,10.09,z],yellow);if(z>=500&&z<=2100){pavement(214,z,160,30);detail([160,.015,.35],[214,10.09,z],yellow)}}
+ // One surface per location: shared tile boundaries remove coplanar intersections.
+ const pavementBatches=new Map();for(const tile of partitionPavement(airportPavements)){
+ const r=airportPavements[tile.owner];if(!pavementBatches.has(r.mat))pavementBatches.set(r.mat,{positions:[],uvs:[]});const b=pavementBatches.get(r.mat);
+ for(const [x,z] of [[tile.x0,tile.z0],[tile.x0,tile.z1],[tile.x1,tile.z0],[tile.x1,tile.z0],[tile.x0,tile.z1],[tile.x1,tile.z1]]){b.positions.push(x,10.04,z);b.uvs.push((x-r.x+r.w/2)/r.w,1-(z-r.z+r.l/2)/r.l);}
+ }
+ for(const [mat,b] of pavementBatches){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(b.positions,3));g.setAttribute('uv',new T.Float32BufferAttribute(b.uvs,2));g.computeVertexNormals();const m=mesh(g,mat,[0,0,0]);m.castShadow=false;}
  // Long glass terminal with three piers, 18 contact stands and articulated bridges.
  detail([115,27,1480],[885,23.5,1300],hangarMat);detail([119,2,1484],[885,38,1300],roofMat);detail([.5,18,1460],[827.2,25,1300],terminalGlass);
  for(let z=580;z<2030;z+=28)detail([1,22,1.2],[826.5,24,z],hangarMat);
@@ -88,7 +100,7 @@ diffuseColor*=mix(sampleA,sampleB,blendTex);
  function lights(points,color){const m=new T.InstancedMesh(new T.SphereGeometry(.5,6,4),new T.MeshBasicMaterial({color}),points.length);const d=new T.Object3D();points.forEach((p,i)=>{d.position.set(...p);d.updateMatrix();m.setMatrixAt(i,d.matrix)});scene.add(m)}
  lights(greenLights,0x41ff99);lights(blueLights,0x4c8cff);
  for(const z of [520,1060,1600,2140])for(const x of [370,800]){detail([.7,32,.7],[x,26,z],roofMat);detail([12,.8,2],[x,42,z],lampMat)}
- for(const [mat,items] of batches){const group=new T.InstancedMesh(new T.BoxGeometry(1,1,1),mat,items.length),d=new T.Object3D();items.forEach(({s,p},i)=>{d.position.set(...p);d.scale.set(...s);d.updateMatrix();group.setMatrixAt(i,d.matrix)});group.castShadow=mat!==paint&&mat!==yellow&&mat!==gatePaint;group.receiveShadow=true;scene.add(group)}
+ for(const [mat,items] of batches){const group=new T.InstancedMesh(new T.BoxGeometry(1,1,1),mat,items.length),d=new T.Object3D();items.forEach(({s,p},i)=>{d.position.set(...p);d.scale.set(...s);d.updateMatrix();group.setMatrixAt(i,d.matrix)});group.castShadow=!mat.userData.groundMarking&&mat!==paint&&mat!==yellow&&mat!==gatePaint;group.renderOrder=mat.userData.groundMarking?2:0;group.receiveShadow=true;scene.add(group)}
  // Distant tree stands are instanced to keep draw calls bounded.
  let seed=8192;function rnd(){seed=(1664525*seed+1013904223)>>>0;return seed/4294967296}
  const treeCount=650;

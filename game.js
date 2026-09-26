@@ -5,7 +5,7 @@ import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
 import {bindJoystick} from './joystick.js';
 
-import {createGraphics} from './graphics.js?v=crash-realism1';
+import {createGraphics} from './graphics.js?v=airport-depth1';
 import {AIRCRAFT,getAircraft} from './aircraft-catalog.js';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
