@@ -1,6 +1,6 @@
-# Plane Crash / Impact Lab
+# Flight Simulator
 
-A browser flight and aircraft-breakup sandbox. Choose a trainer, DC-10, or 747; fly a runway approach or trigger failures in flight.
+A browser flight simulator with ten aircraft, airport operations, takeoff and landing, and optional emergency scenarios.
 
 ## Play
 

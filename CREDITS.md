@@ -1,4 +1,4 @@
-# Plane Crash asset credits
+# Flight Simulator asset credits
 
 - Three.js 0.180.0 and HDRLoader: MIT license, included as `assets/THREE-LICENSE.txt`. https://threejs.org/
 - Aerial Grass Rock: https://polyhaven.com/a/aerial_grass_rock
