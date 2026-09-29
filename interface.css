@@ -26,3 +26,5 @@ button{min-height:50px;font-size:14px;letter-spacing:.2px}select{min-height:50px
 .cockpit-view .notice{bottom:auto;top:115px;font-size:12px}
 .cockpit-view .system-strip{bottom:8px}
 @media(pointer:fine){.cockpit-view .touch{opacity:.28}.cockpit-view .touch:hover,.cockpit-view .touch:focus-within{opacity:1}}
+
+#notice.stall-alert{background:#8b2419;color:#fff;border:2px solid #ffbf71;font-weight:800}

@@ -13,7 +13,7 @@ The replacement asset is https://github.com/c172p-team/c172p at 84477612bba340ab
 - Detailed exterior and analog cockpit with original blue/white paint.
 - Animated airspeed, altitude, heading, vertical speed, attitude, RPM and propeller based on game state; other controls and radios remain decorative.
 - Static geometry batched by material; 2048-pixel maximum textures compressed as WebP.
-- Existing procedural model remains the load-failure fallback and crash geometry. Remaining nine aircraft remain procedural.
+- The procedural model remains the load-failure fallback. The imported Cessna mesh now supplies textured crash geometry. Remaining nine aircraft remain procedural.
 - Approximately 13 MB of aircraft geometry and textures loaded, plus separately downloadable source. Initial load is larger. Physical iPad Safari performance requires device testing.
 
 ## Validation

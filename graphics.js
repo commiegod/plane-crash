@@ -1,4 +1,4 @@
-import {createAssetAircraft} from './asset-aircraft.js';
+import {createAssetAircraft} from './asset-aircraft.js?v=wreck2';
 import {airframeSection} from './aircraft-meshes.js';
 import {createCockpit} from './cockpit.js';
 import {partitionPavement} from './airport-surfaces.js';
