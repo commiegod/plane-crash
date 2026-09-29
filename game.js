@@ -5,7 +5,7 @@ import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
 import {bindJoystick} from './joystick.js';
 
-import {createGraphics} from './graphics.js?v=flight-decks1';
+import {createGraphics} from './graphics.js?v=authored-c172p1';
 import {AIRCRAFT,getAircraft} from './aircraft-catalog.js';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
@@ -155,7 +155,7 @@ $('quality').onclick=()=>{$('quality').textContent='GRAPHICS '+graphics.nextQual
 function updateFlightUI(){
  const actual=state==='paused'?saved:state;
  $('show-report').classList.toggle('hidden',!(cabin.final||reportShown));$('show-report').textContent=actual==='crashed'?'VIEW CRASH REPORT':'FLIGHT REPORT';$('heading').textContent=String(headingDegrees(yaw)).padStart(3,'0');$('aboard').textContent=cabin.total;
- $('flight-identity').textContent=names[aircraft]+' · '+livery.name;
+ $('flight-identity').textContent=names[aircraft]+' · '+(aircraft==='c172'?'Classic blue & white':livery.name);
  $('parking').classList.toggle('hidden',!onGround());$('parking').classList.toggle('engaged',parking);$('parking').textContent=parking?'RELEASE BRAKE':'SET BRAKE';$('parking').disabled=state==='paused';
  $('pushback').classList.toggle('hidden',!['parked','pushback'].includes(actual));$('pushback').disabled=state==='paused';$('pushback').textContent=actual==='pushback'?'STOP PUSHBACK':'PUSHBACK';
  $('taxi-guide').classList.toggle('hidden',actual!=='taxi'||currentConfig?.start==='runway');$('taxi-guide').disabled=state!=='taxi';$('taxi-guide').textContent=taxiAssist?'STOP AUTO TAXI':'AUTO TAXI TO RUNWAY';

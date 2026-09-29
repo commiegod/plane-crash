@@ -16,3 +16,8 @@ Ten representative global airlines: Delta, American, United, Southwest, Emirates
 
 ## September 22 aircraft expansion
 The seven new airframes are original procedural geometry. Manufacturer and museum references, model limitations, and the youth UX review are documented in [FLEET-AND-UX-REVIEW.md](./FLEET-AND-UX-REVIEW.md). No aircraft meshes or textures were extracted from Project Flight or Roblox.
+
+## September 29 authored Cessna replacement
+The Cessna 172P exterior, classic cockpit and instrument artwork now come from the free FlightGear C172P community aircraft, replacing the original procedural Cessna in normal flight. They are GPLv2, not original project geometry. [Attribution, modifications, license and corresponding source](assets/c172p/NOTICE.md). Other aircraft still use the procedural models described above.
+
+GLTFLoader and BufferGeometryUtils are from Three.js r180, covered by the included Three.js MIT license.

@@ -1,0 +1,24 @@
+import * as T from './assets/three.module.js';
+import {GLTFLoader} from './assets/GLTFLoader.js';
+import {mergeGeometries} from './assets/BufferGeometryUtils.js';
+// Authored asset renderer. See assets/c172p/NOTICE.md for model source and license.
+export function createAssetAircraft(scene){
+ let model=null,error=null,loading=null,offset=new T.Vector3(),cockpit=false,clock=0,bindings=[],propeller=null;
+ const root=new T.Group();scene.add(root);root.visible=false;
+ const ready=()=>!!model;
+ function load(){if(loading)return loading;loading=Promise.all([new GLTFLoader().loadAsync('./assets/c172p/c172p.glb'),fetch('./assets/c172p/instruments.json').then(r=>{if(!r.ok)throw Error('Instrument metadata unavailable');return r.json()})]).then(([gltf,animations])=>{
+  const candidate=gltf.scene;candidate.rotation.y=Math.PI/2;candidate.updateMatrixWorld(true);
+  const bounds=new T.Box3().setFromObject(candidate);offset.set(0,-1.5-bounds.min.y,-(bounds.min.z+bounds.max.z)/2);candidate.position.copy(offset);
+  const nodes=new Map();candidate.traverse(o=>{nodes.set(o.userData.name||o.name,o);if(!o.isMesh)return;o.castShadow=true;o.receiveShadow=true;const m=o.material;if(m.map){m.map.anisotropy=4;m.map.colorSpace=T.SRGBColorSpace}if(/glass|transparent/i.test(m.name)){m.transparent=true;m.opacity=.12;m.depthWrite=false;m.roughness=.12;}if(/hotspot|FastProp|Propeller.Fast|courtesyon|BeaconOffX/i.test(o.userData.name||o.name))o.visible=false;});
+  for(const spec of animations)for(const name of spec.names){const node=nodes.get(name);if(!node)continue;const pivot=new T.Group(),center=new T.Vector3(...spec.center);pivot.position.copy(center);node.parent.add(pivot);pivot.add(node);node.position.sub(center);bindings.push({node:pivot,base:center,spec,axis:new T.Vector3(...spec.axis).normalize()});}
+  const prop=nodes.get('Propeller');if(prop){prop.geometry.computeBoundingBox();const center=prop.geometry.boundingBox.getCenter(new T.Vector3());propeller=new T.Group();propeller.position.copy(center);prop.parent.add(propeller);propeller.add(prop);prop.position.sub(center);}
+  // Combine static geometry by material, leaving instrument pivots and glass independent.
+  candidate.updateMatrixWorld(true);const inverse=candidate.matrixWorld.clone().invert(),groups=new Map();
+  candidate.traverse(o=>{if(!o.isMesh||!o.visible||o.material.transparent)return;let p=o.parent;while(p&&p!==candidate){if(bindings.some(b=>b.node===p)||p===propeller)return;p=p.parent}const geometry=o.geometry.clone().applyMatrix4(new T.Matrix4().multiplyMatrices(inverse,o.matrixWorld));const list=groups.get(o.material)||[];list.push({geometry,original:o});groups.set(o.material,list)});
+  for(const [material,geometries] of groups){const merged=mergeGeometries(geometries.map(g=>g.geometry));if(merged){const mesh=new T.Mesh(merged,material);mesh.castShadow=mesh.receiveShadow=true;candidate.add(mesh);for(const g of geometries)g.original.removeFromParent()}for(const g of geometries)g.geometry.dispose()}
+  model=candidate;root.add(model);
+ }).catch(e=>{error=e;console.warn('Detailed Cessna could not load; using fallback.',e)});return loading;}
+ function reading(property,s){if(property.includes('vias-kts'))return Math.hypot(s.vel.x,s.vel.y,s.vel.z)*1.94384;if(property.includes('altitude-ft'))return s.pos.y*3.28084;if(property.includes('heading-deg'))return ((s.yaw*180/Math.PI)%360+360)%360;if(property.includes('speed-fpm'))return s.vel.y*196.85;if(property.includes('rpm'))return s.systems.engines[0].running&&s.systems.fuel>0?600+s.throttle*2100:0;if(property.includes('pitch-deg'))return s.pitch*180/Math.PI;if(property.includes('roll-deg'))return -s.roll*180/Math.PI;return 0;}
+ function animate(s,dt){clock+=dt;if(propeller)propeller.rotation.x+=dt*(s.systems.engines[0].running&&s.systems.fuel>0?35+s.throttle*180:0);if(clock<.05)return;clock=0;for(const b of bindings){const {spec,node}=b;let value=reading(spec.property,s);if(spec.table.length){const t=spec.table;value=Math.max(t[0][0],Math.min(t[t.length-1][0],value));let i=1;while(i<t.length-1&&value>t[i][0])i++;value=t[i-1][1]+(t[i][1]-t[i-1][1])*(value-t[i-1][0])/(t[i][0]-t[i-1][0]);}else value*=spec.factor;value+=spec.offset;if(spec.kind==='rotate')node.quaternion.setFromAxisAngle(b.axis,value*Math.PI/180);else node.position.copy(b.base).addScaledVector(b.axis,value);}}
+ return {load,ready,get error(){return error},update(s,inside,dt=0){root.visible=s.aircraft==='c172'&&ready()&&(s.state==='paused'?s.saved:s.state)!=='crashed';if(!root.visible)return false;root.position.set(s.pos.x,s.pos.y,s.pos.z);root.rotation.set(-s.pitch,s.yaw,s.roll,'YXZ');if(s.state!=='paused'&&s.vel&&s.systems)animate(s,dt);if(cockpit!==inside){cockpit=inside;model.traverse(o=>{if(o.isMesh&&/glass|transparent/i.test(o.material.name))o.visible=!inside;});}return true;},eye(){return {x:.21,y:.273+offset.y,z:-.36+offset.z}},root};
+}
