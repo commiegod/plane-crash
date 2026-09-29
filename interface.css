@@ -17,3 +17,12 @@ button{min-height:50px;font-size:14px;letter-spacing:.2px}select{min-height:50px
 @media(max-height:540px) and (orientation:landscape){.flight-top{flex-wrap:nowrap}.instruments{order:0;width:auto}.identity{top:88px}.action-rail{top:110px;width:140px;max-height:calc(100dvh - 135px)}.action-rail button{min-height:48px}.touch{bottom:65px}.notice{bottom:18px;max-width:calc(100vw - 420px);left:54%;font-size:12px}.system-strip{display:none}.navigation{top:108px}.drawer{top:100px;right:165px;max-height:calc(100dvh - 115px)}.power-controls input{height:80px}}
 .stick-label{white-space:normal;text-align:center;width:150px;bottom:-30px;font-size:11px;line-height:1.3}
 .stick-label{left:0;width:100%;font-size:10px}
+
+/* Keep flight instruments clear while retaining the familiar touch controls. */
+.cockpit-view #engine-gauges{display:none}
+.cockpit-view .touch{left:12px;bottom:45px;gap:8px}
+.cockpit-view .power-controls input{height:100px}
+.cockpit-view #joystick{width:110px;height:110px}
+.cockpit-view .notice{bottom:auto;top:115px;font-size:12px}
+.cockpit-view .system-strip{bottom:8px}
+@media(pointer:fine){.cockpit-view .touch{opacity:.28}.cockpit-view .touch:hover,.cockpit-view .touch:focus-within{opacity:1}}
