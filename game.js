@@ -4,7 +4,7 @@ import {createFleetMeshes} from './aircraft-meshes.js';
 import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,loadFactor} from './flight-config.js';
 import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
-import {bindJoystick} from './joystick.js';
+import {bindJoystick} from './joystick.js?v=steering-20261005';
 
 import {createGraphics} from './graphics.js?v=fleet-20261005';
 import {AIRCRAFT,getAircraft} from './aircraft-catalog.js';
