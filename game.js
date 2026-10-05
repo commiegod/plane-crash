@@ -6,7 +6,7 @@ import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
 import {bindJoystick} from './joystick.js';
 
-import {createGraphics} from './graphics.js?v=stall-wreck2';
+import {createGraphics} from './graphics.js?v=fleet-20261005';
 import {AIRCRAFT,getAircraft} from './aircraft-catalog.js';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
@@ -180,7 +180,7 @@ $('settings-toggle').onclick=()=>{const el=$('settings');el.classList.toggle('hi
 $('close-settings').onclick=()=>{$('settings').classList.add('hidden');$('settings-toggle').setAttribute('aria-expanded','false')};
 $('show-report').onclick=()=>{if(cabin.final||reportShown)showReport(state==='landed'||state==='paused'&&saved==='landed')};
 $('dismiss-report').onclick=()=>{$('panel').classList.add('hidden')};
-const setup=createSetup({start:startConfigured,opening(){state='ready';clearKeys();$('panel').classList.add('hidden')},preview(config){aircraft=config.aircraft;livery=LIVERIES.find(l=>l.id===config.livery);systems=createSystems(spec());pos=V(540,190,350);yaw=0;pitch=0;roll=0;gear=!!spec().fixedGear;buildAircraft();graphics.resetCamera()}});
+const setup=createSetup({start:startConfigured,prepare:id=>graphics.loadAircraft(id),opening(){state='ready';clearKeys();$('panel').classList.add('hidden')},preview(config){graphics.loadAircraft(config.aircraft);aircraft=config.aircraft;livery=LIVERIES.find(l=>l.id===config.livery);systems=createSystems(spec());pos=V(540,190,350);yaw=0;pitch=0;roll=0;gear=!!spec().fixedGear;buildAircraft();graphics.resetCamera()}});
 $('new-flight').onclick=()=>setup.open();
 $('more-controls').onclick=()=>{const el=$('extra-controls');el.classList.toggle('hidden');$('more-controls').setAttribute('aria-expanded',String(!el.classList.contains('hidden')))};
 let helpPaused=false;

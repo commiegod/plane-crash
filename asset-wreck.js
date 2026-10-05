@@ -1,6 +1,6 @@
 import * as T from './assets/three.module.js';
 // Cut the displayed mesh into the existing physics bodies, retaining its UVs and materials.
-export function createAssetWreck(scene){
+export function createAssetWreck(scene,cuts={tail:-1.7,width:1}){
  const root=new T.Group();root.visible=false;scene.add(root);let last=null,objects=[];
  function clear(){root.traverse(o=>{if(o.isMesh)o.geometry.dispose()});root.clear();objects=[];last=null;root.visible=false;}
  function build(model,aircraftRoot,debris){
@@ -17,8 +17,8 @@ export function createAssetWreck(scene){
     const triangle=[];for(let j=i;j<i+3;j++)triangle.push([p.getX(j),p.getY(j),p.getZ(j),n?.getX(j)||0,n?.getY(j)||0,n?.getZ(j)||0,uv?.getX(j)||0,uv?.getY(j)||0]);
     if(representatives.size===3&&representatives.has(0)&&representatives.has(1)&&representatives.has(2)){
      // Clean major breaks: rear fuselage, wings, and forward cabin. Interpolate UVs at cuts.
-     emit(clip(triangle,2,-1.7,-1),representatives.get(1));const front=clip(triangle,2,-1.7,1);
-     emit(clip(front,0,-1,-1),representatives.get(2));emit(clip(front,0,1,1),representatives.get(2));emit(clip(clip(front,0,-1,1),0,1,-1),representatives.get(0));
+     emit(clip(triangle,2,cuts.tail,-1),representatives.get(1));const front=clip(triangle,2,cuts.tail,1);
+     emit(clip(front,0,-cuts.width,-1),representatives.get(2));emit(clip(front,0,cuts.width,1),representatives.get(2));emit(clip(clip(front,0,-cuts.width,1),0,cuts.width,-1),representatives.get(0));
     }else{
      const x=(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3,y=(p.getY(i)+p.getY(i+1)+p.getY(i+2))/3,z=(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3;let nearest=debris[0],distance=Infinity;
      for(const d of debris){const c=d.part.center,dd=(x-c.x)**2+(y-c.y)**2+(z-c.z)**2;if(dd<distance){distance=dd;nearest=d;}}emit(triangle,representatives.get(nearest.group));
