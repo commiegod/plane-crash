@@ -28,3 +28,6 @@ GLTFLoader and BufferGeometryUtils are from Three.js r180, covered by the includ
 - Boeing 737-800: [source, modifications and GPLv2 license](assets/b737/NOTICE.md). Original Delta, American and United paints.
 
 Both include distinct modeled flight decks with simplified live displays. The current authored fleet is C172P, A320 and 737; other aircraft still use procedural geometry.
+
+## DC-10-30 authored replacement
+The DC-10 now uses the free FlightGear community model, with its classic cockpit and original American, Air France and Lufthansa paint. [License, source, credits and modifications](assets/dc10/NOTICE.md). The authored fleet now includes C172P, A320, 737-800 and DC-10-30. Other airframes remain procedural.

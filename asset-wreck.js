@@ -20,8 +20,9 @@ export function createAssetWreck(scene,cuts={tail:-1.7,width:1}){
      emit(clip(triangle,2,cuts.tail,-1),representatives.get(1));const front=clip(triangle,2,cuts.tail,1);
      emit(clip(front,0,-cuts.width,-1),representatives.get(2));emit(clip(front,0,cuts.width,1),representatives.get(2));emit(clip(clip(front,0,-cuts.width,1),0,cuts.width,-1),representatives.get(0));
     }else{
-     const x=(p.getX(i)+p.getX(i+1)+p.getX(i+2))/3,y=(p.getY(i)+p.getY(i+1)+p.getY(i+2))/3,z=(p.getZ(i)+p.getZ(i+1)+p.getZ(i+2))/3;let nearest=debris[0],distance=Infinity;
-     for(const d of debris){const c=d.part.center,dd=(x-c.x)**2+(y-c.y)**2+(z-c.z)**2;if(dd<distance){distance=dd;nearest=d;}}emit(triangle,representatives.get(nearest.group));
+     // Subdivide long source triangles before assigning catastrophic fragments.
+     // Otherwise a single thin triangle can stretch across several moving panels.
+     const pieces=[{v:triangle,depth:0}];while(pieces.length){const {v,depth}=pieces.pop();let edge=0,length=0;for(let j=0;j<3;j++){const a=v[j],b=v[(j+1)%3],d=(a[0]-b[0])**2+(a[1]-b[1])**2+(a[2]-b[2])**2;if(d>length){length=d;edge=j;}}if(representatives.size>3&&length>36&&depth<8){const a=v[edge],b=v[(edge+1)%3],c=v[(edge+2)%3],mid=a.map((n,k)=>(n+b[k])/2);pieces.push({v:[a,mid,c],depth:depth+1},{v:[mid,b,c],depth:depth+1});continue;}const x=(v[0][0]+v[1][0]+v[2][0])/3,y=(v[0][1]+v[1][1]+v[2][1])/3,z=(v[0][2]+v[1][2]+v[2][2])/3;let nearest=debris[0],distance=Infinity;for(const d of debris){const c=d.part.center,dd=(x-c.x)**2+(y-c.y)**2+(z-c.z)**2;if(dd<distance){distance=dd;nearest=d;}}emit(v,representatives.get(nearest.group));}
     }
    }g.dispose();
   });
