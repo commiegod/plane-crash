@@ -1,5 +1,6 @@
 // Airline-inspired paint and game configurations; capacities are chosen cabin layouts.
 export const LIVERIES=[
+
  {
   "id": "delta",
   "name": "Delta Air Lines",
@@ -99,7 +100,8 @@ export const LIVERIES=[
   "accent": "#d4a548",
   "ratio": 2.7333333333333334,
   "body": "#f4f3ed"
- }
+ },
+ {id:'klm',name:'KLM Royal Dutch Airlines',label:'KLM',logo:'./assets/airlines/KLM.svg',color:'#00a1de',accent:'#ffffff',ratio:2,body:'#f5f5f4'}
 ];
 export const CABINS={twin:{capacity:8,crew:2,emptyMass:4000},dc10:{capacity:270,crew:10,emptyMass:120000},b747:{capacity:416,crew:16,emptyMass:180000}};
 CABINS['c172']={"capacity": 3, "crew": 1, "emptyMass": 767};

@@ -31,3 +31,7 @@ Both include distinct modeled flight decks with simplified live displays. The cu
 
 ## DC-10-30 authored replacement
 The DC-10 now uses the free FlightGear community model, with its classic cockpit and original American, Air France and Lufthansa paint. [License, source, credits and modifications](assets/dc10/NOTICE.md). The authored fleet now includes C172P, A320, 737-800 and DC-10-30. Other airframes remain procedural.
+
+## October 15 Boeing 747-400 replacement
+
+- Boeing 747-400: [source, modifications and GPLv2 license](assets/b747/NOTICE.md), with original KLM paint and a modeled cockpit with simplified live displays.

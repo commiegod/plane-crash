@@ -1,5 +1,6 @@
-import {createAssetAircraft} from './asset-aircraft.js?v=crash-dc10-20261005';
+import {createAssetAircraft} from './asset-aircraft.js?v=fleet-747-20261015';
 export const AUTHORED_AIRCRAFT={
+ b747:{id:'b747',folder:'b747',file:'b747',clearance:4.4,eye:[.55,3.8,24.05],cuts:{tail:-21,width:3.4}},
  dc10:{id:'dc10',folder:'dc10',file:'dc10',clearance:4.4,eye:[.52398,1.32,24.37],cuts:{tail:-15,width:3}},
  c172:{id:'c172',folder:'c172p',file:'c172p',clearance:1.5,eye:[.21,.273,-.36]},
  b737:{id:'b737',folder:'b737',file:'b737',clearance:4,eye:[.51,1.28,17.18],cuts:{tail:-9,width:2.0}},
