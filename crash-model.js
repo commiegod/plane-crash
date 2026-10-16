@@ -6,7 +6,7 @@ export function assessImpact({speed=0,sink=0,bank=0,pitch=0,airborne=false,gear=
  const severity=blast?1:Math.min(1,energy/42+(airborne?.28:0));
  const mode=blast||severity>=.8?'fragmented':severity>=.3||airborne?'sections':'intact';
  const fire=blast?Math.min(1,.35+fuel/100):fuel>0&&severity>.48?Math.min(1,(severity-.4)*fuel/65):0;
- return {mode,severity,fire,gearCollapsed:!gear||normal>5,energy,label:mode==='intact'?(!gear?'BELLY LANDING':'LANDING GEAR COLLAPSE'):mode==='sections'?'MAJOR STRUCTURAL DAMAGE':'CABIN DESTROYED'};
+ return {mode,severity,fire,noseImpact:obstacle&&speed>12,gearCollapsed:!gear||normal>5,energy,label:mode==='intact'?(!gear?'BELLY LANDING':'LANDING GEAR COLLAPSE'):mode==='sections'?'MAJOR STRUCTURAL DAMAGE':'CABIN DESTROYED'};
 }
 export function fracturePanels(parts){
  // Subdivide long faces into short panels, preserving a bounded debris count.

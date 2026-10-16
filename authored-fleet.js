@@ -1,4 +1,4 @@
-import {createAssetAircraft} from './asset-aircraft.js?v=fleet-747-20261015';
+import {createAssetAircraft} from './asset-aircraft.js?v=continuous-flight-20261015';
 export const AUTHORED_AIRCRAFT={
  b747:{id:'b747',folder:'b747',file:'b747',clearance:4.4,eye:[.55,3.8,24.05],cuts:{tail:-21,width:3.4}},
  dc10:{id:'dc10',folder:'dc10',file:'dc10',clearance:4.4,eye:[.52398,1.32,24.37],cuts:{tail:-15,width:3}},
