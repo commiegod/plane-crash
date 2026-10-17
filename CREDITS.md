@@ -35,3 +35,7 @@ The DC-10 now uses the free FlightGear community model, with its classic cockpit
 ## October 15 Boeing 747-400 replacement
 
 - Boeing 747-400: [source, modifications and GPLv2 license](assets/b747/NOTICE.md), with original KLM paint and a modeled cockpit with simplified live displays.
+
+## October 17 Douglas DC-3 replacement
+
+- Douglas DC-3: [source, modifications and GPLv2 license](assets/dc3/NOTICE.md), with Air France paint, classic cockpit, live analog flight/RPM instruments and independently animated propellers. The same authored model is retained in wreckage.
