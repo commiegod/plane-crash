@@ -39,3 +39,7 @@ The DC-10 now uses the free FlightGear community model, with its classic cockpit
 ## October 17 Douglas DC-3 replacement
 
 - Douglas DC-3: [source, modifications and GPLv2 license](assets/dc3/NOTICE.md), with Air France paint, classic cockpit, live analog flight/RPM instruments and independently animated propellers. The same authored model is retained in wreckage.
+
+## October 18 Douglas DC-9-32 replacement
+
+DC-9-32 exterior and flight deck by Lester Boffo and Joshua Davidson, adapted from FlightGear community assets. [Source, modifications and CC BY-NC-SA 4.0 terms](assets/dc9/NOTICE.md). This aircraft has a noncommercial share-alike license, unlike the earlier GPL fleet assets.
