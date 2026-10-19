@@ -51,3 +51,7 @@ Cessna Citation X exterior, cabin and flight deck by Syd Adams and FlightGear co
 ## October 19 C-130 Hercules replacement
 
 Classic C-130 exterior and analog cockpit by Emmanuel Baranger, Didier Fabert and FlightGear community contributors. Four independent propellers and live flight/RPM instruments. [Source, modifications and GPLv2 terms](assets/c130/NOTICE.md).
+
+## October 19 Piper Seneca II replacement
+
+Piper PA-34 Seneca II by Torsten Dreyer and FlightGear community contributors, with shared FlightGear analog instruments. Original D-GEAR paint, modeled cockpit, counter-rotating propellers and matching wreckage. [Source, adaptations and GPL terms](assets/seneca/NOTICE.md). All ten aircraft selections now use authored models.

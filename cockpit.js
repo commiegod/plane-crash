@@ -1,7 +1,7 @@
 import * as T from './assets/three.module.js';
 // Representative variants; instruments read the game's flight state, not a certified avionics model.
 export const DECKS={
- twin:{name:'Twin trainer · conventional instruments',analog:true,color:'#393c3c',engines:2},
+ twin:{name:'Seneca II · conventional instruments',analog:true,color:'#393c3c',engines:2},
  c172:{name:'Cessna 172S · G1000 NXi layout',screens:2,color:'#464748',engines:1,small:true},
  dc3:{name:'DC-3 · classic analog flight deck',analog:true,color:'#323d35',engines:2,classic:true},
  dc9:{name:'DC-9-30 · analog flight deck',analog:true,color:'#45494c',engines:2},

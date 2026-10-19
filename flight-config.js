@@ -103,7 +103,7 @@ export const LIVERIES=[
  },
  {id:'klm',name:'KLM Royal Dutch Airlines',label:'KLM',logo:'./assets/airlines/KLM.svg',color:'#00a1de',accent:'#ffffff',ratio:2,body:'#f5f5f4'}
 ];
-export const CABINS={twin:{capacity:8,crew:2,emptyMass:4000},dc10:{capacity:270,crew:10,emptyMass:120000},b747:{capacity:416,crew:16,emptyMass:180000}};
+export const CABINS={twin:{capacity:5,crew:1,emptyMass:1293},dc10:{capacity:270,crew:10,emptyMass:120000},b747:{capacity:416,crew:16,emptyMass:180000}};
 CABINS['c172']={"capacity": 3, "crew": 1, "emptyMass": 767};
 CABINS['dc3']={"capacity": 28, "crew": 3, "emptyMass": 7650};
 CABINS['a320']={"capacity": 180, "crew": 6, "emptyMass": 42600};
