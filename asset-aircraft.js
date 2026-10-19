@@ -1,5 +1,5 @@
-import {createAircraftDisplays} from './aircraft-displays.js?v=citationx-20261018';
-import {createAssetWreck} from './asset-wreck.js?v=citationx-20261018';
+import {createAircraftDisplays} from './aircraft-displays.js?v=c130-20261019';
+import {createAssetWreck} from './asset-wreck.js?v=c130-20261019';
 import * as T from './assets/three.module.js';
 import {GLTFLoader} from './assets/GLTFLoader.js';
 import {mergeGeometries} from './assets/BufferGeometryUtils.js';
@@ -20,6 +20,11 @@ export function createAssetAircraft(scene,config={id:'c172',folder:'c172p',file:
     const pivot=new T.Group();pivot.position.set(-4.25,-1.248,y);const parts=[...nodes.values()].filter(o=>o.isMesh&&new RegExp('^wheels/(axe'+side+'[1-4]|roue'+side+')$').test(o.userData.name||o.name));
     if(parts.length){parts[0].parent.add(pivot);for(const part of parts){pivot.add(part);part.position.sub(pivot.position);part.userData.dynamic=true;}retractors.push(pivot);}
    }
+  }
+  if(config.id==='c130'){
+   candidate.traverse(o=>{if(o.isMesh&&/^empty\//i.test(o.userData.name||o.name)){o.material=o.material.clone();o.material.map=null;o.material.color.set(0x15191b);}});
+   for(const name of ['propeller1','propeller2','propeller3','propeller4']){const node=nodes.get(name);if(node)propellers.push(node);}
+   candidate.traverse(o=>{if(/^main\/(roue|temp[ADGH]|temp[GH]?[GD]|rotationH|articule|porteroue)/.test(o.userData.name||o.name)){gears.push(o);o.traverse(part=>part.userData.dynamic=true);}});
   }
   if(config.id==='g650'){
    candidate.traverse(o=>{if(/^Citation-X\/(Nosewheel|FrtStrut|frtshock|F[UL]damper|[LR]H(wheel|shock|Tarm)|[LR]Geardoor|[LR][HR]frt.geardoor)/.test(o.userData.name||o.name)){gears.push(o);o.traverse(part=>part.userData.dynamic=true);}});

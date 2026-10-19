@@ -47,3 +47,7 @@ DC-9-32 exterior and flight deck by Lester Boffo and Joshua Davidson, adapted fr
 ## October 18 Citation X private-jet replacement
 
 Cessna Citation X exterior, cabin and flight deck by Syd Adams and FlightGear community contributors. [Source, adaptations and GPLv2 terms](assets/citationx/NOTICE.md). This replaces the procedural Gulfstream selection and is labeled Citation X to match the actual model.
+
+## October 19 C-130 Hercules replacement
+
+Classic C-130 exterior and analog cockpit by Emmanuel Baranger, Didier Fabert and FlightGear community contributors. Four independent propellers and live flight/RPM instruments. [Source, modifications and GPLv2 terms](assets/c130/NOTICE.md).

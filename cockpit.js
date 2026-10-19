@@ -10,7 +10,7 @@ export const DECKS={
  a320:{name:'A320 · six-display layout',screens:6,color:'#596975',engines:2,sideStick:true},
  b737:{name:'737-800 · six-display layout',screens:6,color:'#70645b',engines:2},
  g650:{name:'Citation X · Primus-style layout',screens:5,color:'#514e49',engines:2},
- c130:{name:'C-130J · four-display layout',screens:4,color:'#404947',engines:4,hud:true}
+ c130:{name:'C-130 · classic analog flight deck',analog:true,color:'#404947',engines:4,classic:true}
 };
 export function cockpitReadings(s){return {speed:Math.hypot(s.vel.x,s.vel.y,s.vel.z)*1.94384,altitude:s.pos.y*3.28084,vertical:s.vel.y*196.8504,heading:((s.yaw*180/Math.PI)%360+360)%360,engines:s.systems.engines.map(e=>e.running&&s.systems.fuel>0?Math.round(s.throttle*100):0)}}
 export function createCockpit(){

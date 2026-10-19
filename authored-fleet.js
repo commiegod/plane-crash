@@ -1,5 +1,6 @@
-import {createAssetAircraft} from './asset-aircraft.js?v=citationx-20261018';
+import {createAssetAircraft} from './asset-aircraft.js?v=c130-20261019';
 export const AUTHORED_AIRCRAFT={
+ c130:{id:'c130',folder:'c130',file:'c130',clearance:4.2,eye:[.607,-2.06119,11.95587],cuts:{tail:-8,width:2.4}},
  g650:{id:'g650',folder:'citationx',file:'citationx',clearance:2.4,eye:[.375,.41,7],cuts:{tail:-6,width:1.3}},
  dc9:{id:'dc9',folder:'dc9',file:'dc9',clearance:3.7,eye:[.5,1.5,-3.1],cuts:{tail:-9,width:1.8}},
  dc3:{id:'dc3',folder:'dc3',file:'dc3',clearance:2.6,eye:[.475,.434,7.965],cuts:{tail:-6,width:1.65}},
