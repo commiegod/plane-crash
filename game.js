@@ -1,13 +1,13 @@
 import {stallCondition} from './stall-model.js';
-import {assessImpact,fracturePanels} from './crash-model.js?v=dc9-20261018';
+import {assessImpact,fracturePanels} from './crash-model.js?v=citationx-20261018';
 import {createFleetMeshes} from './aircraft-meshes.js';
-import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,loadFactor} from './flight-config.js?v=dc9-20261018';
+import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,loadFactor} from './flight-config.js?v=citationx-20261018';
 import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
-import {bindJoystick} from './joystick.js?v=dc9-20261018';
+import {bindJoystick} from './joystick.js?v=citationx-20261018';
 
-import {createGraphics} from './graphics.js?v=dc9-20261018';
-import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=dc9-20261018';
+import {createGraphics} from './graphics.js?v=citationx-20261018';
+import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=citationx-20261018';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
 const V=(x=0,y=0,z=0)=>({x,y,z}),add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z),sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z),mul=(a,s)=>V(a.x*s,a.y*s,a.z*s),dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z,cross=(a,b)=>V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x),len=a=>Math.hypot(a.x,a.y,a.z),norm=a=>mul(a,1/(len(a)||1)),mix=(a,b,t)=>add(mul(a,1-t),mul(b,t)),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -157,7 +157,7 @@ $('quality').onclick=()=>{$('quality').textContent='GRAPHICS '+graphics.nextQual
 function updateFlightUI(){
  const actual=state==='paused'?saved:state;
  $('show-report').classList.toggle('hidden',!(cabin.final||reportShown||landingMessage));$('show-report').textContent=actual==='crashed'?'VIEW CRASH REPORT':'FLIGHT REPORT';$('heading').textContent=String(headingDegrees(yaw)).padStart(3,'0');$('aboard').textContent=cabin.total;
- $('flight-identity').textContent=names[aircraft]+' · '+(aircraft==='c172'?'Classic blue & white':livery.name);
+ $('flight-identity').textContent=names[aircraft]+' · '+(AIRCRAFT.find(a=>a.id===aircraft).paintName||(aircraft==='c172'?'Classic blue & white':livery.name));
  $('parking').classList.toggle('hidden',!onGround());$('parking').classList.toggle('engaged',parking);$('parking').textContent=parking?'RELEASE BRAKE':'SET BRAKE';$('parking').disabled=state==='paused';
  $('pushback').classList.toggle('hidden',!['parked','pushback'].includes(actual));$('pushback').disabled=state==='paused';$('pushback').textContent=actual==='pushback'?'STOP PUSHBACK':'PUSHBACK';
  $('taxi-guide').classList.toggle('hidden',actual!=='taxi'||currentConfig?.start==='runway');$('taxi-guide').disabled=state!=='taxi';$('taxi-guide').textContent=taxiAssist?'STOP AUTO TAXI':'AUTO TAXI TO RUNWAY';

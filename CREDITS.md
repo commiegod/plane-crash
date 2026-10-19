@@ -43,3 +43,7 @@ The DC-10 now uses the free FlightGear community model, with its classic cockpit
 ## October 18 Douglas DC-9-32 replacement
 
 DC-9-32 exterior and flight deck by Lester Boffo and Joshua Davidson, adapted from FlightGear community assets. [Source, modifications and CC BY-NC-SA 4.0 terms](assets/dc9/NOTICE.md). This aircraft has a noncommercial share-alike license, unlike the earlier GPL fleet assets.
+
+## October 18 Citation X private-jet replacement
+
+Cessna Citation X exterior, cabin and flight deck by Syd Adams and FlightGear community contributors. [Source, adaptations and GPLv2 terms](assets/citationx/NOTICE.md). This replaces the procedural Gulfstream selection and is labeled Citation X to match the actual model.

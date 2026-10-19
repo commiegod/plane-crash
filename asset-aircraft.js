@@ -1,5 +1,5 @@
-import {createAircraftDisplays} from './aircraft-displays.js?v=dc9-20261018';
-import {createAssetWreck} from './asset-wreck.js?v=dc9-20261018';
+import {createAircraftDisplays} from './aircraft-displays.js?v=citationx-20261018';
+import {createAssetWreck} from './asset-wreck.js?v=citationx-20261018';
 import * as T from './assets/three.module.js';
 import {GLTFLoader} from './assets/GLTFLoader.js';
 import {mergeGeometries} from './assets/BufferGeometryUtils.js';
@@ -19,6 +19,14 @@ export function createAssetAircraft(scene,config={id:'c172',folder:'c172p',file:
    for(const [side,y] of [['G',2.814],['D',-2.814]]){
     const pivot=new T.Group();pivot.position.set(-4.25,-1.248,y);const parts=[...nodes.values()].filter(o=>o.isMesh&&new RegExp('^wheels/(axe'+side+'[1-4]|roue'+side+')$').test(o.userData.name||o.name));
     if(parts.length){parts[0].parent.add(pivot);for(const part of parts){pivot.add(part);part.position.sub(pivot.position);part.userData.dynamic=true;}retractors.push(pivot);}
+   }
+  }
+  if(config.id==='g650'){
+   candidate.traverse(o=>{if(/^Citation-X\/(Nosewheel|FrtStrut|frtshock|F[UL]damper|[LR]H(wheel|shock|Tarm)|[LR]Geardoor|[LR][HR]frt.geardoor)/.test(o.userData.name||o.name)){gears.push(o);o.traverse(part=>part.userData.dynamic=true);}});
+   for(const [groupName,screenName,type] of [['PFD3d','PFD.screen','pfd'],['MFD3d','MFD.bkg.001','nav'],['EICAS3d','EICAS.norm','engine']])for(const group of named.get(groupName)||[]){
+    let original;group.traverse(o=>{if(o.isMesh&&(o.userData.name||o.name)===groupName+'/'+screenName)original=o;});if(!original)continue;
+    original.geometry.computeBoundingBox();const box=original.geometry.boundingBox,size=box.getSize(new T.Vector3()),center=box.getCenter(new T.Vector3());
+    group.traverse(o=>{if(o.isMesh)o.visible=false;});const screen=new T.Mesh(new T.PlaneGeometry(size.z,size.y),new T.MeshBasicMaterial());const uv=screen.geometry.attributes.uv;for(let i=0;i<uv.count;i++)uv.setY(i,1-uv.getY(i));screen.rotation.y=Math.PI/2;screen.position.copy(center);screen.position.x+=.003;group.add(screen);displays.bind(screen,type);
    }
   }
   if(config.id==='dc9')candidate.traverse(o=>{if(/^DC-9-32\/LG[NLR]/.test(o.userData.name||o.name)){gears.push(o);o.traverse(part=>part.userData.dynamic=true);}});
