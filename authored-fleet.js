@@ -1,4 +1,4 @@
-import {createAssetAircraft} from './asset-aircraft.js?v=seneca-20261019';
+import {createAssetAircraft} from './asset-aircraft.js?v=handling-20261019';
 export const AUTHORED_AIRCRAFT={
  twin:{id:'twin',folder:'seneca',file:'seneca',clearance:1.5,eye:[.358,1.75,.3],cuts:{tail:-2.6,width:.75}},
  c130:{id:'c130',folder:'c130',file:'c130',clearance:4.2,eye:[.607,-2.06119,11.95587],cuts:{tail:-8,width:2.4}},
