@@ -5,6 +5,8 @@ export const LIGHT_HANDLING=Object.freeze({
  b737:{flapDegrees:40,takeoffFlaps:.25,flapLimit:100,steering:.46,turnGrip:2.2,response:1.9,braking:4.6,stroke:.23,airThrust:12.5,flapDrag:.00046,flapRate:.15},
  dc3:{flapDegrees:40,takeoffFlaps:.25,flapLimit:70,steering:.50,turnGrip:1.8,response:2.2,braking:3.8,stroke:.18,airThrust:9.4,flapDrag:.00040,flapRate:.18},
  dc9:{flapDegrees:50,takeoffFlaps:.30,flapLimit:95,steering:.43,turnGrip:2.1,response:1.8,braking:4.4,stroke:.22,airThrust:11.5,flapDrag:.00044,flapRate:.14},
+ c130:{flapDegrees:50,takeoffFlaps:.5,flapLimit:85,steering:.38,turnGrip:1.7,response:1.7,braking:3.7,stroke:.28,airThrust:9.2,flapDrag:.00046,flapRate:.12},
+ g650:{flapDegrees:35,takeoffFlaps:15/35,flapLimit:95,steering:.55,turnGrip:2.5,response:2.7,braking:5.1,stroke:.16,airThrust:9.6,flapDrag:.00040,flapRate:.20},
  twin:{flapDegrees:40,takeoffFlaps:.25,flapLimit:57,steering:.60,turnGrip:2.7,response:3.2,braking:5.4,stroke:.13}
 });
 export function lightAero(id,flaps=0,gear=false){

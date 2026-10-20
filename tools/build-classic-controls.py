@@ -2,7 +2,7 @@
 from pathlib import Path
 import zipfile,xml.etree.ElementTree as E,json
 root=Path(__file__).resolve().parent.parent
-for id,files in {'dc3':['Models/main.xml'],'dc9':['Models/DC-9-32.xml','Models/Flightdeck/Instruments/Flaps/flaps.xml','Models/Flightdeck/Flightdeck.xml']}.items():
+for id,files in {'c130':['Models/main.xml'],'citationx':['Models/Citation-X.xml','Models/pedestal.xml'],'dc3':['Models/main.xml'],'dc9':['Models/DC-9-32.xml','Models/Flightdeck/Instruments/Flaps/flaps.xml','Models/Flightdeck/Flightdeck.xml']}.items():
  z=zipfile.ZipFile(root/'assets'/id/'source.zip');anims=[]
  for path in files:
   frame=Path(path).stem;r=E.fromstring(z.read(path))
