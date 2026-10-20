@@ -1,6 +1,6 @@
-import {AIRLINER_CONTROLS} from './airliner-controls.js?v=widebody-20261020';
-import {createAircraftDisplays} from './aircraft-displays.js?v=widebody-20261020';
-import {createAssetWreck} from './asset-wreck.js?v=widebody-20261020';
+import {AIRLINER_CONTROLS} from './airliner-controls.js?v=impact-20261020';
+import {createAircraftDisplays} from './aircraft-displays.js?v=impact-20261020';
+import {createAssetWreck} from './asset-wreck.js?v=impact-20261020';
 import * as T from './assets/three.module.js';
 import {GLTFLoader} from './assets/GLTFLoader.js';
 import {mergeGeometries} from './assets/BufferGeometryUtils.js';

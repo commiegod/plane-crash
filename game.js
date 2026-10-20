@@ -1,14 +1,14 @@
-import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=widebody-20261020';
+import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=impact-20261020';
 import {stallCondition} from './stall-model.js';
-import {assessImpact,fracturePanels} from './crash-model.js?v=widebody-20261020';
+import {assessImpact,fracturePanels,wreckGroundMotion} from './crash-model.js?v=impact-20261020';
 import {createFleetMeshes} from './aircraft-meshes.js';
-import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,loadFactor} from './flight-config.js?v=widebody-20261020';
+import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,loadFactor} from './flight-config.js?v=impact-20261020';
 import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
-import {bindJoystick} from './joystick.js?v=widebody-20261020';
+import {bindJoystick} from './joystick.js?v=impact-20261020';
 
-import {createGraphics} from './graphics.js?v=widebody-20261020';
-import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=widebody-20261020';
+import {createGraphics} from './graphics.js?v=impact-20261020';
+import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=impact-20261020';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
 const V=(x=0,y=0,z=0)=>({x,y,z}),add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z),sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z),mul=(a,s)=>V(a.x*s,a.y*s,a.z*s),dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z,cross=(a,b)=>V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x),len=a=>Math.hypot(a.x,a.y,a.z),norm=a=>mul(a,1/(len(a)||1)),mix=(a,b,t)=>add(mul(a,1-t),mul(b,t)),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -136,19 +136,19 @@ function crash(airborne=false,cause='GROUND CONTACT'){
  const g={center,pos:add(pos,local),vel:add(vel,V((Math.random()-.5)*spread,airborne?(Math.random()-.5)*spread:0,(Math.random()-.5)*spread)),p:pitch,r:roll,y:yaw,spin:crashProfile.mode==='intact'?V():V((Math.random()-.5)*spread*.15,(Math.random()-.5)*spread*.1,(Math.random()-.5)*spread*.15),rest:false,hitGround:false,members};
  // Contact height follows the underside of this rigid assembly, not a fixed point.
  g.bottom=Math.min(...members.flatMap(p=>p.verts.map(v=>v.y+p.center.y-center.y)));g.contact=Math.max(.15,-g.bottom);crashGroups[id]=g;
- if(!airborne){const retention=crashProfile.mode==='intact'?.85:crashProfile.mode==='sections'?.5:.28;const wall=cause==='BUILDING COLLISION'?.35:1;g.vel.x*=retention*wall;g.vel.z*=retention*wall;g.pos.y=Math.max(g.pos.y,ground(g.pos.x,g.pos.z)+g.contact);g.vel.y=0;g.hitGround=true;}
+ if(!airborne&&g.pos.y<=ground(g.pos.x,g.pos.z)+g.contact+clearance()){const retention=crashProfile.mode==='intact'?.85:crashProfile.mode==='sections'?.5:.28;const wall=cause==='BUILDING COLLISION'?.35:1;g.vel.x*=retention*wall;g.vel.z*=retention*wall;g.pos.y=Math.max(g.pos.y,ground(g.pos.x,g.pos.z)+g.contact);g.vel.y=0;g.hitGround=true;}
  }
  for(let i=0;i<parts.length;i++)debris.push({part:parts[i],group:assignments[i]});syncWreck();elapsed=0;clearKeys();
  if(!muted&&audio){const buffer=audio.createBuffer(1,Math.floor(audio.sampleRate*.5),audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);const src=audio.createBufferSource(),g=audio.createGain();src.buffer=buffer;g.gain.value=.08+crashProfile.severity*.22;src.connect(g);g.connect(audio.destination);src.start();}
- if(!airborne)tickCabin(cabin,0,true);
+ if(crashGroups.some(g=>g?.hitGround))tickCabin(cabin,0,true);
 }
 function stepWreck(dt){
- for(const g of crashGroups){if(!g||g.rest)continue;g.vel.y-=9.81*dt;g.pos=add(g.pos,mul(g.vel,dt));
+ for(const g of crashGroups){if(!g||g.rest)continue;const wasGrounded=g.hitGround,oldPos={...g.pos};g.vel.y-=9.81*dt;g.pos=add(g.pos,mul(g.vel,dt));
  g.p+=g.spin.x*dt;g.r+=g.spin.y*dt;g.y+=g.spin.z*dt;
  const bottom=Math.min(...g.members.flatMap(p=>p.verts.map(v=>rotate(sub(add(v,p.center),g.center),g.p,g.r,g.y).y)));
  const gy=ground(g.pos.x,g.pos.z)-bottom;
  if(g.pos.y<=gy||g.hitGround){if(!g.hitGround){const retention=crashProfile.mode==='intact'?.85:crashProfile.mode==='sections'?.5:.28;g.vel.x*=retention;g.vel.z*=retention;}g.hitGround=true;g.pos.y=gy;g.vel.y=0;
- const sp=Math.hypot(g.vel.x,g.vel.z),decel=onPavement(g.pos.x,g.pos.z)?6:10,drag=crashProfile.mode==='fragmented'?.55:crashProfile.mode==='sections'?.24:.12,next=Math.max(0,(sp+decel/drag)*Math.exp(-drag*dt)-decel/drag);g.vel.x*=next/(sp||1);g.vel.z*=next/(sp||1);g.spin=mul(g.spin,Math.exp(-dt*5));
+ const sp=Math.hypot(g.vel.x,g.vel.z),motion=wreckGroundMotion(sp,dt,crashProfile.mode,onPavement(g.pos.x,g.pos.z)),next=motion.speed;if(wasGrounded){g.pos.x=oldPos.x+g.vel.x/(sp||1)*motion.distance;g.pos.z=oldPos.z+g.vel.z/(sp||1)*motion.distance;g.pos.y=ground(g.pos.x,g.pos.z)-bottom;}g.vel.x*=next/(sp||1);g.vel.z*=next/(sp||1);g.spin=mul(g.spin,Math.exp(-dt*5));
  if(crashProfile.mode==='intact'){g.p*=Math.exp(-dt*3);g.r*=Math.exp(-dt*3);}
  if(next<.25){g.rest=true;g.vel=V();g.spin=V()}}
  }

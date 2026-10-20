@@ -2,11 +2,11 @@
 export function assessImpact({speed=0,sink=0,bank=0,pitch=0,airborne=false,gear=true,cause='',fuel=0}){
  const obstacle=/BUILDING|ROUGH|GROUND IMPACT/.test(cause),blast=cause==='ONBOARD EXPLOSION';
  const normal=Math.max(0,-sink),attitude=Math.abs(bank)*13+Math.max(0,-pitch)*18;
- const energy=normal+attitude+(obstacle?speed*.48:Math.max(0,speed-85)*.16);
+ const energy=normal+normal*normal/90+attitude+(obstacle?speed*.30+speed*speed/450:Math.max(0,speed-85)*.16);
  const severity=blast?1:Math.min(1,energy/42+(airborne?.28:0));
  const mode=blast||severity>=.8?'fragmented':severity>=.3||airborne?'sections':'intact';
  const fire=blast?Math.min(1,.35+fuel/100):fuel>0&&severity>.48?Math.min(1,(severity-.4)*fuel/65):0;
- return {mode,severity,fire,noseImpact:obstacle&&speed>12,gearCollapsed:!gear||normal>5,energy,label:mode==='intact'?(!gear?'BELLY LANDING':'LANDING GEAR COLLAPSE'):mode==='sections'?'MAJOR STRUCTURAL DAMAGE':'CABIN DESTROYED'};
+ return {mode,severity,fire,noseImpact:obstacle&&speed>12,gearCollapsed:!gear||normal>5,energy,label:mode==='intact'?(!gear?'BELLY LANDING':normal>5?'LANDING GEAR COLLAPSE':'AIRFRAME DAMAGED'):mode==='sections'?'MAJOR STRUCTURAL DAMAGE':'CABIN DESTROYED'};
 }
 export function fracturePanels(parts){
  // Subdivide long faces into short panels, preserving a bounded debris count.
@@ -16,4 +16,11 @@ export function fracturePanels(parts){
  if(!verts.length)continue;const center=verts.reduce((a,p)=>({x:a.x+p.x/verts.length,y:a.y+p.y/verts.length,z:a.z+p.z/verts.length}),{x:0,y:0,z:0});
  out.push({kind:'wreck',cabin:part.kind==='fuselage'||part.kind==='aft'||parts.indexOf(part)<2,center,verts:verts.map(p=>({x:p.x-center.x,y:p.y-center.y,z:p.z-center.z})),faces:fs,color:part.color});}
  }return out;
+}
+
+// Integrate ground drag analytically so settling is consistent across frame rates.
+export function wreckGroundMotion(speed,dt,mode,paved){
+ const friction=(paved?8:13)*(mode==='intact'?.8:1),drag=mode==='fragmented'?.8:mode==='sections'?.40:.18;
+ const stop=Math.log1p(Math.max(0,speed)*drag/friction)/drag,t=Math.min(Math.max(0,dt),stop);
+ return {speed:Math.max(0,(speed+friction/drag)*Math.exp(-drag*t)-friction/drag),distance:(speed+friction/drag)*(1-Math.exp(-drag*t))/drag-friction*t/drag};
 }
