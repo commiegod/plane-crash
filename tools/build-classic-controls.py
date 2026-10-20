@@ -2,10 +2,10 @@
 from pathlib import Path
 import zipfile,xml.etree.ElementTree as E,json
 root=Path(__file__).resolve().parent.parent
-for id,files in {'c130':['Models/main.xml'],'citationx':['Models/Citation-X.xml','Models/pedestal.xml'],'dc3':['Models/main.xml'],'dc9':['Models/DC-9-32.xml','Models/Flightdeck/Instruments/Flaps/flaps.xml','Models/Flightdeck/Flightdeck.xml']}.items():
+for id,files in {'dc10':['Models/DC-10-main.xml'],'b747':['Models/747-400.xml'],'c130':['Models/main.xml'],'citationx':['Models/Citation-X.xml','Models/pedestal.xml'],'dc3':['Models/main.xml'],'dc9':['Models/DC-9-32.xml','Models/Flightdeck/Instruments/Flaps/flaps.xml','Models/Flightdeck/Flightdeck.xml']}.items():
  z=zipfile.ZipFile(root/'assets'/id/'source.zip');anims=[]
  for path in files:
-  frame=Path(path).stem;r=E.fromstring(z.read(path))
+  frame='DC-10-30' if path=='Models/DC-10-main.xml' else Path(path).stem;r=E.fromstring(z.read(path))
   for a in r.findall('animation'):
    names=[n.text for n in a.findall('object-name')];kind=a.findtext('type');prop=a.findtext('property','')
    if kind not in ['rotate','translate'] or not ('flap-pos' in prop or prop=='controls/flight/flaps'):continue

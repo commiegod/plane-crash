@@ -1,14 +1,14 @@
-import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=cargo-private-20261020';
+import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=widebody-20261020';
 import {stallCondition} from './stall-model.js';
-import {assessImpact,fracturePanels} from './crash-model.js?v=cargo-private-20261020';
+import {assessImpact,fracturePanels} from './crash-model.js?v=widebody-20261020';
 import {createFleetMeshes} from './aircraft-meshes.js';
-import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,loadFactor} from './flight-config.js?v=cargo-private-20261020';
+import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,loadFactor} from './flight-config.js?v=widebody-20261020';
 import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
-import {bindJoystick} from './joystick.js?v=cargo-private-20261020';
+import {bindJoystick} from './joystick.js?v=widebody-20261020';
 
-import {createGraphics} from './graphics.js?v=cargo-private-20261020';
-import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=cargo-private-20261020';
+import {createGraphics} from './graphics.js?v=widebody-20261020';
+import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=widebody-20261020';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
 const V=(x=0,y=0,z=0)=>({x,y,z}),add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z),sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z),mul=(a,s)=>V(a.x*s,a.y*s,a.z*s),dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z,cross=(a,b)=>V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x),len=a=>Math.hypot(a.x,a.y,a.z),norm=a=>mul(a,1/(len(a)||1)),mix=(a,b,t)=>add(mul(a,1-t),mul(b,t)),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));

@@ -1,5 +1,5 @@
 import {createAirportDamage} from './airport-damage.js';
-import {createAuthoredFleet} from './authored-fleet.js?v=cargo-private-20261020';
+import {createAuthoredFleet} from './authored-fleet.js?v=widebody-20261020';
 import {airframeSection} from './aircraft-meshes.js';
 import {createCockpit} from './cockpit.js';
 import {partitionPavement} from './airport-surfaces.js';
