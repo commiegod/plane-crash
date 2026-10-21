@@ -1,14 +1,14 @@
-import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=buildings-20261021';
+import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=ground-20261021';
 import {stallCondition} from './stall-model.js';
-import {assessImpact,assessTouchdown,fracturePanels,wreckGroundMotion} from './crash-model.js?v=buildings-20261021';
+import {assessImpact,assessTouchdown,fracturePanels,wreckGroundMotion} from './crash-model.js?v=ground-20261021';
 import {createFleetMeshes} from './aircraft-meshes.js';
-import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,buildingContact,loadFactor} from './flight-config.js?v=buildings-20261021';
+import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,buildingContact,loadFactor} from './flight-config.js?v=ground-20261021';
 import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
-import {bindJoystick} from './joystick.js?v=buildings-20261021';
+import {bindJoystick} from './joystick.js?v=ground-20261021';
 
-import {createGraphics} from './graphics.js?v=buildings-20261021';
-import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=buildings-20261021';
+import {createGraphics} from './graphics.js?v=ground-20261021';
+import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=ground-20261021';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
 const V=(x=0,y=0,z=0)=>({x,y,z}),add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z),sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z),mul=(a,s)=>V(a.x*s,a.y*s,a.z*s),dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z,cross=(a,b)=>V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x),len=a=>Math.hypot(a.x,a.y,a.z),norm=a=>mul(a,1/(len(a)||1)),mix=(a,b,t)=>add(mul(a,1-t),mul(b,t)),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -73,7 +73,15 @@ function rotationTarget(){return (spec().takeoffSpeed||65)*aero().rotationScale*
 function headingDegrees(angle){return ((Math.round(angle*180/Math.PI)%360)+360)%360}
 function enginePercent(e){return systems.fuel>0&&e.running&&!e.onFire&&!['crashed','ready'].includes(state==='paused'?saved:state)?Math.round(throttle*100):0}
 function toggleTaxi(){if(state!=='taxi')return;if(taxiAssist){taxiAssist=false;throttle=0;return}parking=false;taxiAssist=true;const g=spawnPoint({...currentConfig,start:'gate'});route=taxiRoute(g,currentConfig?.runway||'01');throttle=.25}
-// Sample terrain across the gear footprint. Flat grass is a surface, not a collision.
+// Approximate the three gear contact patches; mixed surfaces blend rolling resistance.
+function groundSurface(){
+ const span=spec().visual?.span||(aircraft==='b747'?59:aircraft==='dc10'?50:20),length=spec().visual?.length||(aircraft==='b747'?64:aircraft==='dc10'?55:28);
+ const track=clamp(span*.12,.8,7),wheelbase=clamp(length*.28,1.8,16);
+ const patches=[[-track,-wheelbase*.2],[track,-wheelbase*.2],[0,wheelbase*.8]];
+ const grass=patches.reduce((n,[x,z])=>{const q=rotate(V(x,0,z),0,0,yaw);return n+(onPavement(pos.x+q.x,pos.z+q.z)?0:1)},0)/3;
+ return {grass,resistance:.7+grass*2.3,drag:grass*.0007};
+}
+// Flat grass is a surface, not a collision.
 function terrainUnsafe(x,z,speed=0,heading=yaw){
  const gx=(ground(x+3,z)-ground(x-3,z))/6,gz=(ground(x,z+3)-ground(x,z-3))/6;
  return Math.hypot(gx,gz)>.65;
@@ -94,7 +102,7 @@ function contactBuilding(dt){
 function contactTerrain(){
  if(!terrainUnsafe(pos.x,pos.z))return false;
  if(len(vel)>14){crash(false,'ROUGH TERRAIN IMPACT',Math.min(len(vel),22));return true;}
- throttle=0;vel=V();taxiAssist=false;return true;
+ throttle=0;vel=V();taxiAssist=false;if(state==='pushback'){state='taxi';pushRemaining=0;parking=true;gearUI();}return true;
 }
 function groundStep(dt){
  if(tickSystems(systems,dt,state==='pushback'?0:throttle,spec())){crash(false,'FIRE DAMAGE');return}
@@ -116,7 +124,8 @@ function groundStep(dt){
  throttle=clamp(throttle+((keys.more?1:0)-(keys.less?1:0))*dt*.35,0,1);const speed=len(vel);
  yaw+=lightSteering(aircraft,turn,speed)*dt*(systems.controlsFailed?.18:1);
  const brake=parking?12:keys.brake?(LIGHT_HANDLING[aircraft]?.braking||9):0,power=parking||keys.brake?0:throttle*spec().thrust*enginePower(systems)/massFactor;
- const next=Math.max(0,speed+(power-aero().drag*speed*speed-(onPavement(pos.x,pos.z)?(state==='landed'&&throttle===0?3.2:.7):3)-brake)*dt);
+ const surface=groundSurface(),rolling=surface.resistance+(state==='landed'&&throttle===0?(1-surface.grass)*2.5:0);
+ const next=Math.max(0,speed+(power-(aero().drag+surface.drag)*speed*speed-rolling-brake)*dt);
  vel=V(Math.sin(yaw)*next,0,Math.cos(yaw)*next);pos=add(pos,mul(vel,dt));
  const rotateSpeed=rotationTarget();pitch=clamp(pitch+pull*dt*.2,0,.2);if(!pull)pitch*=Math.exp(-dt*2);
  if(next>=rotateSpeed&&pitch>.06&&onPavement(pos.x,pos.z)&&!parking&&!keys.brake){state='flight';landingMessage=false;reportShown=false;$('panel').classList.add('hidden');stall={severity:0,stalled:false,warning:false,alpha:0};vel.y=Math.max(3,next*Math.sin(pitch));pos.y+=1;parking=false;return}
@@ -199,6 +208,7 @@ function updateFlightUI(){
  if(state==='pushback')$('notice').textContent=parking?'Pushback paused. Release the brake to continue.':'Steer while reversing. Tap Stop Pushback to take over.';
  if(state==='taxi')$('notice').textContent=taxiAssist?'Auto taxi is driving to the runway. Steer to take over.':parking?'First, tap Release Brake. Then slide Power up.':len(vel)>rotationTarget()?'Ready to lift off! Pull the joystick down gently.':'Increase power. Lift off at '+Math.round(rotationTarget()*1.944)+' KT';
  if(state==='landed')$('notice').textContent=parking?'Brake is set. Release it to taxi or fly again.':(landingQuality==='hard'?'Hard landing. Gear is holding. Taxi or take off again.':'Smooth landing. Steer to taxi, or add power to take off again.');
+ if(['taxi','landed'].includes(state)&&!parking&&groundSurface().grass>0)$('notice').textContent='Grass slows the plane. Steer back to pavement for takeoff.';
  if(state==='crashed'&&!cabin.final)$('notice').textContent='DAMAGE IN PROGRESS · REPORT AT IMPACT';
  if(h&&flapNotice>0)$('notice').textContent='Slow below '+Math.round(h.flapLimit*1.944)+' KT to lower flaps.';
  $('throttle-slider').value=Math.round(throttle*100);$('throttle-slider').disabled=!['flight','taxi','landed'].includes(state);$('power-value').textContent=Math.round(throttle*100)+'%';
