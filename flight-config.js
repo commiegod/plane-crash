@@ -124,10 +124,17 @@ export function onPavement(x,z){
  if(Math.abs(x-295)<17&&z>=410&&z<=2150)return true;
  return [100,500,1000,1550,2100,2300].some(c=>Math.abs(z-c)<17&&x>=27&&x<=(c>=500&&c<=2100?310:153));
 }
-export function buildingCollision(pos,radius=8){
+export function buildingContact(pos,radius=8){
  const boxes=[{x:885,z:1300,w:115,l:1480,h:39},{x:975,z:2080,w:36,l:36,h:75}];
  for(const z of [760,1300,1840]){boxes.push({x:650,z,w:385,l:54,h:27});for(const side of [-1,1])for(const x of [495,625,755])boxes.push({x:x-11,z:z+side*60,w:45,l:40,h:23})}
  for(let z=550;z<2100;z+=280)boxes.push({x:1005,z,w:62,l:123,h:32});
- return boxes.some(b=>pos.y< b.h+3&&Math.abs(pos.x-b.x)<b.w/2+radius&&Math.abs(pos.z-b.z)<b.l/2+radius);
+ for(const b of boxes){
+  const dx=pos.x-b.x,dz=pos.z-b.z,px=b.w/2+radius-Math.abs(dx),pz=b.l/2+radius-Math.abs(dz);
+  if(pos.y>=b.h+3||px<=0||pz<=0)continue;
+  return px<pz?{nx:Math.sign(dx)||1,nz:0,depth:px}:{nx:0,nz:Math.sign(dz)||1,depth:pz};
+ }
+ return null;
 }
 export function loadFactor(aircraft,passengers,fuel){const c=CABINS[aircraft];return 1+passengers*90/c.emptyMass+fuel*.0015}
+
+export function buildingCollision(pos,radius=8){return !!buildingContact(pos,radius)}

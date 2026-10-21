@@ -1,0 +1,14 @@
+process.chdir(require('path').join(__dirname,'..'));
+const fs=require('fs'),vm=require('vm'),assert=require('assert');const script=fs.readFileSync('light-aircraft.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('stall-model.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('crash-model.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('aircraft-meshes.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('flight-config.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('cabin.js','utf8').replace(/export /g,'')+'\nconst createSetup=()=>({open(){}});\n'+fs.readFileSync('aircraft-catalog.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('failures.js','utf8').replace(/export /g,'')+'\nconst bindJoystick=()=>({reset(){stick={x:0,y:0}}});const createGraphics=()=>({resetCamera(){},draw(){}});\n'+fs.readFileSync('game.js','utf8').replace(/import .*?;\n/g,'');const els={};function el(){return {textContent:'',classList:{add(){},remove(){},contains(){return true}},focus(){},setAttribute(){},addEventListener(){},getContext(){return {}},dataset:{}}}const context={console,Math,innerWidth:1280,innerHeight:720,devicePixelRatio:1,document:{getElementById:id=>els[id]??=el(),querySelectorAll:()=>[],addEventListener(){}},addEventListener(){},requestAnimationFrame(){}};vm.createContext(context);vm.runInContext(script,context);function run(s){return vm.runInContext(s,context)}
+
+
+for(const hz of [30,60,120]){
+ run('startConfigured({mode:"departure",aircraft:"c172",start:"runway",passengers:3,fuel:80});state="flight";pos=V(826,20,1100);vel=V(2,0,65);contactBuilding(1/'+hz+')');
+ assert.equal(run('state'),'flight');assert(run('scrape!==null'));assert(run('vel.z>60'));assert.equal(run('cabinTotals(cabin).fatalities'),0);
+ run('pos=V(826,20,1100);vel=V(40,0,0);contactBuilding(1/'+hz+')');assert.equal(run('state'),'crashed');
+}
+run('startConfigured({mode:"departure",aircraft:"c172",start:"runway",passengers:3,fuel:80});state="taxi";pos=V(-60,ground(-60,500)+clearance(),500);vel=V(0,0,12);yaw=0;parking=false;for(let i=0;i<600;i++)step(1/60)');assert.equal(run('state'),'taxi');assert.equal(run('cabinTotals(cabin).fatalities'),0);
+// Find an actual moderate hillside and prove speed alone cannot label it catastrophic.
+assert(run('(()=>{for(let x=-500;x<0;x+=5)for(let z=300;z<2200;z+=25){const slope=Math.hypot((ground(x+3,z)-ground(x-3,z))/6,(ground(x,z+3)-ground(x,z-3))/6);if(slope>.15&&slope<.6)return !terrainUnsafe(x,z,100);}return false})()'));
+run('const hill=(()=>{for(let x=-2000;x<2000;x+=20)for(let z=-2000;z<3000;z+=80)if(terrainUnsafe(x,z))return {x,z}})();pos=V(hill.x,ground(hill.x,hill.z)+clearance(),hill.z);vel=V(0,0,5);contactTerrain()');assert.equal(run('state'),'taxi');assert.equal(run('len(vel)'),0);assert.equal(run('cabinTotals(cabin).fatalities'),0);
+console.log('PASS glancing building scrape, normal-speed collision, level grass, moderate slopes and low-speed steep-ground stop');
