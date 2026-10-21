@@ -24,3 +24,14 @@ export function wreckGroundMotion(speed,dt,mode,paved){
  const stop=Math.log1p(Math.max(0,speed)*drag/friction)/drag,t=Math.min(Math.max(0,dt),stop);
  return {speed:Math.max(0,(speed+friction/drag)*Math.exp(-drag*t)-friction/drag),distance:(speed+friction/drag)*(1-Math.exp(-drag*t))/drag-friction*t/drag};
 }
+
+// Surface contact is determined by descent and sideways motion, not runway heading.
+// These thresholds are gameplay tuning, not certified landing limits.
+export function assessTouchdown({sink=0,bank=0,pitch=0,gear=true,speed=0,lateral=0,approach=72,blocked=false}){
+ const descent=Math.max(0,-sink);
+ const controlled=Math.abs(bank)<.17&&pitch>-.12&&pitch<.25&&Math.abs(lateral)<Math.max(5,speed*.16);
+ if(blocked||!controlled||speed>approach*1.5)return 'impact';
+ if(!gear)return 'belly';
+ if(descent>5)return 'collapse';
+ return descent>2.5?'hard':'smooth';
+}
