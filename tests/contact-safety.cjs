@@ -4,8 +4,8 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');const script=fs
 
 for(const hz of [30,60,120]){
  run('startConfigured({mode:"departure",aircraft:"c172",start:"runway",passengers:3,fuel:80});state="flight";pos=V(826,20,1100);vel=V(2,0,65);contactBuilding(1/'+hz+')');
- assert.equal(run('state'),'flight');assert(run('scrape!==null'));assert(run('vel.z>60'));assert.equal(run('cabinTotals(cabin).fatalities'),0);
- run('pos=V(826,20,1100);vel=V(40,0,0);contactBuilding(1/'+hz+')');assert.equal(run('state'),'crashed');
+ assert.equal(run('state'),'flight');assert(run('scrape!==null'));assert(Math.abs(run('scrape.x')-827.5)<.01,'scrape lies on wall');assert(run('vel.z>60'));assert.equal(run('cabinTotals(cabin).fatalities'),0);
+ run('pos=V(826,20,1100);vel=V(40,0,0);contactBuilding(1/'+hz+')');assert.equal(run('state'),'crashed');assert(Math.abs(run('crashProfile.contactPoint.x')-827.5)<.01,'crash uses wall contact');
 }
 run('startConfigured({mode:"departure",aircraft:"c172",start:"runway",passengers:3,fuel:80});state="taxi";pos=V(-60,ground(-60,500)+clearance(),500);vel=V(0,0,12);yaw=0;parking=false;for(let i=0;i<600;i++)step(1/60)');assert.equal(run('state'),'taxi');assert.equal(run('cabinTotals(cabin).fatalities'),0);
 // Find an actual moderate hillside and prove speed alone cannot label it catastrophic.

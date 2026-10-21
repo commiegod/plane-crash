@@ -1,4 +1,4 @@
-import {createAssetAircraft} from './asset-aircraft.js?v=landing-20261021';
+import {createAssetAircraft} from './asset-aircraft.js?v=buildings-20261021';
 export const AUTHORED_AIRCRAFT={
  b727:{id:'b727',folder:'b727',file:'b727',clearance:3.8,eye:[.475,1.02,20.44],cuts:{tail:-13,width:2.1}},
  twin:{id:'twin',folder:'seneca',file:'seneca',clearance:1.5,eye:[.358,1.75,.3],cuts:{tail:-2.6,width:.75}},

@@ -1,14 +1,14 @@
-import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=landing-20261021';
+import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=buildings-20261021';
 import {stallCondition} from './stall-model.js';
-import {assessImpact,assessTouchdown,fracturePanels,wreckGroundMotion} from './crash-model.js?v=landing-20261021';
+import {assessImpact,assessTouchdown,fracturePanels,wreckGroundMotion} from './crash-model.js?v=buildings-20261021';
 import {createFleetMeshes} from './aircraft-meshes.js';
-import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,buildingContact,loadFactor} from './flight-config.js?v=landing-20261021';
+import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,buildingContact,loadFactor} from './flight-config.js?v=buildings-20261021';
 import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
 import {createSetup} from './setup-ui.js';
-import {bindJoystick} from './joystick.js?v=landing-20261021';
+import {bindJoystick} from './joystick.js?v=buildings-20261021';
 
-import {createGraphics} from './graphics.js?v=landing-20261021';
-import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=landing-20261021';
+import {createGraphics} from './graphics.js?v=buildings-20261021';
+import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=buildings-20261021';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
 const V=(x=0,y=0,z=0)=>({x,y,z}),add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z),sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z),mul=(a,s)=>V(a.x*s,a.y*s,a.z*s),dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z,cross=(a,b)=>V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x),len=a=>Math.hypot(a.x,a.y,a.z),norm=a=>mul(a,1/(len(a)||1)),mix=(a,b,t)=>add(mul(a,1-t),mul(b,t)),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -82,8 +82,9 @@ function contactBuilding(dt){
  const radius=spec().visual?Math.min(spec().visual.span/2,spec().visual.length*.35):spec().geometry==='twin'?10:23;
  const hit=buildingContact(pos,radius);if(!hit)return false;
  const into=Math.max(0,-vel.x*hit.nx-vel.z*hit.nz);
- if(into>16){crash(false,'BUILDING COLLISION',into);return true;}
- scrape={x:pos.x-hit.nx*radius,y:pos.y,z:pos.z-hit.nz*radius,life:.18,speed:len(vel)};
+ const contact={x:pos.x+hit.nx*(hit.depth-radius),y:pos.y,z:pos.z+hit.nz*(hit.depth-radius)};
+ if(into>16){crash(false,'BUILDING COLLISION',into,contact);return true;}
+ scrape={...contact,nx:hit.nx,nz:hit.nz,normalSpeed:into,life:.18,speed:len(vel)};
  pos.x+=hit.nx*(hit.depth+.05);pos.z+=hit.nz*(hit.depth+.05);
  vel.x=(vel.x+hit.nx*into)*Math.exp(-dt*.6);vel.z=(vel.z+hit.nz*into)*Math.exp(-dt*.6);
  taxiAssist=false;if(state==='pushback'){state='taxi';pushRemaining=0;}
@@ -140,9 +141,10 @@ const map={ArrowUp:'up',w:'up',ArrowDown:'down',s:'down',ArrowLeft:'left',a:'lef
 function syncWreck(){
  for(const d of debris){const g=crashGroups[d.group];d.pos=add(g.pos,rotate(sub(d.part.center,g.center),g.p,g.r,g.y));d.vel=g.vel;d.p=g.p;d.r=g.r;d.y=g.y;d.hitGround=g.hitGround;d.rest=g.rest;}
 }
-function crash(airborne=false,cause='GROUND CONTACT',contactSpeed=null){
+function crash(airborne=false,cause='GROUND CONTACT',contactSpeed=null,contactPoint=null){
  if(state==='crashed')return;
  crashProfile=assessImpact({speed:contactSpeed??len(vel),sink:vel.y,bank:roll,pitch,airborne,gear,cause,fuel:systems.fuel});
+ crashProfile.contactPoint=contactPoint;
  crashCause=crashProfile.mode==='intact'&&cause==='GROUND CONTACT'?crashProfile.label:cause;
  startIncident(cabin,{speed:len(vel),sink:vel.y,bank:roll,airborne,fire:crashProfile.fire,gear,cause,damage:crashProfile});
  reportShown=false;$('panel').classList.add('hidden');landingMessage=false;state='crashed';crashFuel=systems.fuel;assist=false;throttle=0;gearUI();impact=len(vel);impactPos={...pos};
