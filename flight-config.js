@@ -138,3 +138,5 @@ export function buildingContact(pos,radius=8){
 export function loadFactor(aircraft,passengers,fuel){const c=CABINS[aircraft];return 1+passengers*90/c.emptyMass+fuel*.0015}
 
 export function buildingCollision(pos,radius=8){return !!buildingContact(pos,radius)}
+
+CABINS['b727']={capacity:189,crew:6,emptyMass:45000};

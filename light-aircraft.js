@@ -1,5 +1,6 @@
 // Tuned gameplay responses, not certified aircraft performance data.
 export const LIGHT_HANDLING=Object.freeze({
+ b727:{flapDegrees:40,takeoffFlaps:.375,flapLimit:105,steering:.42,turnGrip:2,response:1.8,braking:4.3,stroke:.23,airThrust:11.7,flapDrag:.00042,flapRate:.13},
  c172:{flapDegrees:30,takeoffFlaps:1/3,flapLimit:46,steering:.78,turnGrip:3.2,response:4.5,braking:6.2,stroke:.16},
  a320:{flapDegrees:40,takeoffFlaps:.375,flapLimit:105,steering:.40,turnGrip:2.0,response:1.65,braking:4.2,stroke:.26,airThrust:12,flapDrag:.00042,flapRate:.13},
  b737:{flapDegrees:40,takeoffFlaps:.25,flapLimit:100,steering:.46,turnGrip:2.2,response:1.9,braking:4.6,stroke:.23,airThrust:12.5,flapDrag:.00046,flapRate:.15},

@@ -1,5 +1,5 @@
-import {AIRCRAFT} from './aircraft-catalog.js?v=contact-20261020';
-import {MODES,LIVERIES,CABINS,GATES} from './flight-config.js?v=contact-20261020';
+import {AIRCRAFT} from './aircraft-catalog.js?v=b727-20261020';
+import {MODES,LIVERIES,CABINS,GATES} from './flight-config.js?v=b727-20261020';
 const $=id=>document.getElementById(id);
 const planeIcon=(id)=>{const a=AIRCRAFT.find(a=>a.id===id),v=a?.visual; if(!v)return `<svg viewBox="0 0 260 100" aria-hidden="true"><path fill="currentColor" d="M18 54L91 47L124 9H139L127 47L223 49Q247 52 227 59L126 59L138 90H125L94 61H34L18 84H9L14 57L5 35H14Z"/></svg>`;const scale=80/Math.max(v.span,v.length),L=v.length*scale,S=v.span*scale/2,sw=v.sweep*scale;return `<svg viewBox="0 0 180 100" aria-hidden="true"><g transform="translate(90 50)"><ellipse rx="${v.radius*scale}" ry="${L/2}" fill="currentColor"/><path d="M-2 -8L${-S} ${sw-6}V${sw+3}L-2 8H2L${S} ${sw+3}V${sw-6}L2 -8Z M-1 ${L*.3}L${-S*.32} ${L*.43}V${L*.47}H${S*.32}V${L*.43}L1 ${L*.3}Z" fill="currentColor"/>${a.engines.map(e=>`<rect x="${e.position.x*scale-2}" y="${-e.position.z*scale-3}" width="4" height="8" rx="2" fill="currentColor"/>${v.prop?`<path d="M${e.position.x*scale-5} ${-e.position.z*scale-4}h10" stroke="currentColor" stroke-width="2"/>`:''}`).join('')}</g></svg>`};
 export function createSetup({start,preview,opening,prepare=()=>Promise.resolve()}){

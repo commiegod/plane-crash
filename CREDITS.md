@@ -55,3 +55,7 @@ Classic C-130 exterior and analog cockpit by Emmanuel Baranger, Didier Fabert an
 ## October 19 Piper Seneca II replacement
 
 Piper PA-34 Seneca II by Torsten Dreyer and FlightGear community contributors, with shared FlightGear analog instruments. Original D-GEAR paint, modeled cockpit, counter-rotating propellers and matching wreckage. [Source, adaptations and GPL terms](assets/seneca/NOTICE.md). All ten aircraft selections now use authored models.
+
+## October 20 Boeing 727 addition
+
+- Boeing 727-230: [source, modifications and GPLv2 license](assets/b727/NOTICE.md), with original Lufthansa paint, modeled analog cockpit, and three engines.
