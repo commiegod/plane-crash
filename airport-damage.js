@@ -9,7 +9,7 @@ export function createAirportDamage(scene,ground,limit=96){
  function update(s,dt){const state=s.state==='paused'?s.saved:s.state;
  if(s.systems&&flight!==s.systems){reset();flight=s.systems;}
  if(state==='ready'){reset();return;}if(s.state==='paused')return;
- if(state!=='crashed'&&s.scrape&&(s.scrape.normalSpeed>2||s.scrape.speed>12)&&scuffed.size<12){
+ if(state!=='crashed'&&s.scrape&&!s.scrape.terrain&&(s.scrape.normalSpeed>2||s.scrape.speed>12)&&scuffed.size<12){
  const p=s.scrape,b=sections.filter(b=>!scuffed.has(b)&&distance(b,p)<2).sort((a,b)=>distance(a,p)-distance(b,p))[0];
  if(b){const color=new T.Color(1,1,1);if(b.mesh.instanceColor)b.mesh.getColorAt(b.index,color);else {for(let i=0;i<b.mesh.count;i++)b.mesh.setColorAt(i,new T.Color(1,1,1));}scuffed.set(b,color.clone());b.mesh.setColorAt(b.index,color.multiplyScalar(.68));b.mesh.instanceColor.needsUpdate=true;
  for(let i=0;i<3&&bodies.length<limit;i++){const size=[.2+i*.1,.15,.25];bodies.push({position:new T.Vector3(p.x+(p.nx||0)*.2,p.y,p.z+(p.nz||0)*.2),velocity:new T.Vector3((p.nx||0)*(1+i),1+i,(p.nz||0)*(1+i)),size,rotation:new T.Vector3(),rest:false});rubble.setColorAt(bodies.length-1,b.material.color||new T.Color(0x9ba5a9));}rubble.count=bodies.length;if(rubble.instanceColor)rubble.instanceColor.needsUpdate=true;}

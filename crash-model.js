@@ -41,3 +41,9 @@ export function groundImpactRetention(mode,sink,speed){
  const normal=Math.max(0,-sink),ratio=normal/Math.max(1,speed);
  return Math.max(.25,(mode==='intact'?.97:mode==='sections'?.90:.78)-Math.min(.5,ratio*.8));
 }
+
+// Contact normal speed measures motion into terrain, not speed along it.
+export function assessScrape({normalSpeed=0,depth=0,speed=0,wear=0,dt=0}){
+ const next=wear+Math.max(0,dt)*Math.max(0,speed-8)*(.006+Math.max(0,depth)*.035);
+ return {wear:next,breaks:normalSpeed>4.5||depth>.85||next>=1};
+}

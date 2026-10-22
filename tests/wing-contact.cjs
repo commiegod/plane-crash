@@ -4,7 +4,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');const script=fs
 
 
 for(const id of ['b727','twin','dc10','b747','c172','dc3','a320','b737','dc9','g650','c130'])for(const side of [-1,1]){
- run(`startConfigured({mode:"departure",aircraft:"${id}",start:"runway",passengers:3,fuel:80});state="flight";gear=false;pitch=0;yaw=0;roll=${-side*.55};var envelope=wingEnvelope();pos=V(0,10+envelope.span/2*.88*Math.sin(.55)-envelope.wingY*Math.cos(.55),700);vel=V(0,0,70);contactWings(1/60)`);
+ run(`startConfigured({mode:"departure",aircraft:"${id}",start:"runway",passengers:3,fuel:80});state="flight";gear=false;pitch=0;yaw=0;roll=${-side*.55};var envelope=wingEnvelope();pos=V(0,10+envelope.span/2*.88*Math.sin(.55)-envelope.wingY*Math.cos(.55),700);vel=V(0,-6,70);contactWings(1/60)`);
  assert.equal(run('state'),'flight',id+' survives tip strike');
  assert(run(`wingDamage.${side<0?'left':'right'}>0`),id+' hit side');
  assert.equal(run(`wingDamage.${side<0?'right':'left'}`),0,id+' opposite intact');
@@ -19,5 +19,5 @@ run('state="flight";pos=V(0,11,700);vel=V(0,-2,70);gear=false;crash(false,"GROUN
 console.log('PASS both wing tips across 11 aircraft, retained input, fragment settling, pause/reset, and shallow crash slide');
 
 run('startConfigured({mode:"departure",aircraft:"b737",start:"runway",passengers:3,fuel:80});state="flight";gear=false;roll=0;pitch=0;yaw=0;vel=V(0,0,60)');
-const hillside=run(`(()=>{const v=wingEnvelope();for(let x=-1800;x<1800;x+=20)for(let z=500;z<2000;z+=25){const outer=ground(x+v.span*.47,z-v.sweep*.94),inner=ground(x,z);if(outer-inner>3){pos=V(x,outer-v.wingY-.5,z);contactWings(1/60);if(wingDebris.length)return true;}}return false;})()`);assert(hillside,'level wing intersects rising hillside');
+const hillside=run(`(()=>{const v=wingEnvelope();for(let x=-1800;x<1800;x+=20)for(let z=500;z<2000;z+=25){const outer=ground(x+v.span*.47,z-v.sweep*.94),inner=ground(x,z);if(outer-inner>3){pos=V(x,outer-v.wingY-.5,z);contactWings(1/60);if(wingDebris.length||scrape?.terrain)return true;}}return false;})()`);assert(hillside,'level wing intersects rising hillside');
 console.log('PASS hillside wing contact without relying on bank angle');

@@ -1,7 +1,7 @@
-import {createWingBreakup} from './wing-breakup.js?v=wing-20261021';
-import {AIRLINER_CONTROLS} from './airliner-controls.js?v=wing-20261021';
-import {createAircraftDisplays} from './aircraft-displays.js?v=wing-20261021';
-import {createAssetWreck} from './asset-wreck.js?v=wing-20261021';
+import {createWingBreakup} from './wing-breakup.js?v=scrape-20261021';
+import {AIRLINER_CONTROLS} from './airliner-controls.js?v=scrape-20261021';
+import {createAircraftDisplays} from './aircraft-displays.js?v=scrape-20261021';
+import {createAssetWreck} from './asset-wreck.js?v=scrape-20261021';
 import * as T from './assets/three.module.js';
 import {GLTFLoader} from './assets/GLTFLoader.js';
 import {mergeGeometries} from './assets/BufferGeometryUtils.js';

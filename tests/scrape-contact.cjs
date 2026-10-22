@@ -1,0 +1,14 @@
+process.chdir(require('path').join(__dirname,'..'));
+const fs=require('fs'),vm=require('vm'),assert=require('assert');const script=fs.readFileSync('light-aircraft.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('stall-model.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('crash-model.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('aircraft-meshes.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('flight-config.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('cabin.js','utf8').replace(/export /g,'')+'\nconst createSetup=()=>({open(){}});\n'+fs.readFileSync('aircraft-catalog.js','utf8').replace(/export /g,'')+'\n'+fs.readFileSync('failures.js','utf8').replace(/export /g,'')+'\nconst bindJoystick=()=>({reset(){stick={x:0,y:0}}});const createGraphics=()=>({resetCamera(){},draw(){}});\n'+fs.readFileSync('game.js','utf8').replace(/import .*?;\n/g,'');const els={};function el(){return {textContent:'',classList:{add(){},remove(){},contains(){return true}},focus(){},setAttribute(){},addEventListener(){},getContext(){return {}},dataset:{}}}const context={console,Math,innerWidth:1280,innerHeight:720,devicePixelRatio:1,document:{getElementById:id=>els[id]??=el(),querySelectorAll:()=>[],addEventListener(){}},addEventListener(){},requestAnimationFrame(){}};vm.createContext(context);vm.runInContext(script,context);function run(s){return vm.runInContext(s,context)}
+
+
+
+for(const hz of [30,60,120]){
+ let wear=0,t=0;while(wear<1&&t<10){wear=run(`assessScrape({normalSpeed:.2,depth:.1,speed:50,wear:${wear},dt:${1/hz}}).wear`);t+=1/hz;}assert(t>2&&t<3,'sustained grinding timing');
+ assert(!run(`assessScrape({normalSpeed:.2,depth:.05,speed:80,dt:${1/hz}}).breaks`),'fast shallow contact remains scrape');
+ assert(run(`assessScrape({normalSpeed:6,depth:.05,speed:40,dt:${1/hz}}).breaks`),'normal impact breaks');
+ run(`startConfigured({mode:"departure",aircraft:"c172",start:"runway",passengers:3,fuel:80});state="flight";roll=-.55;pitch=0;yaw=0;gear=false;pos=V(0,10+5.5*.88*Math.sin(.55)-.75*Math.cos(.55),700);vel=V(0,0,50);contactWings(${1/hz})`);
+ assert.equal(run('state'),'flight');assert.equal(run('wingDebris.length'),0);assert(run('scrape.terrain'));assert.equal(run('cabinTotals(cabin).fatalities'),0);
+}
+run('startConfigured({mode:"departure",aircraft:"b737",start:"runway",passengers:20,fuel:80});state="flight";gear=false;roll=0;pitch=0;yaw=0;pos=V(0,12.65,700);vel=V(0,0,50);contactEngines(1/60)');assert(run('systems.engines.every(e=>e.running)'));assert.equal(run('scrape.part'),'engine');run('vel.y=-6;contactEngines(1/60)');assert(run('systems.engines.every(e=>!e.running&&e.contactDamaged)'));assert.equal(run('state'),'flight');assert.equal(run('cabinTotals(cabin).fatalities'),0);
+console.log('PASS shallow scrapes, normal-speed strikes, frame-independent wear, engine-only damage and no immediate fatalities');
