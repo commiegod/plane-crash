@@ -6,16 +6,17 @@ export function createCabin(passengers,crew){
  return {passengers,crew,total,sections:[a,b,total-a-b].map((occupants,i)=>({name:['Forward','Center','Rear'][i],occupants,survivors:occupants,injured:0,fatalities:0,damage:0,evacuated:0})),phase:'aboard',elapsed:0,fire:0,exits:1,final:false};
 }
 export function startIncident(cabin,{speed,sink,bank,airborne,fire,gear,cause,damage}){
- cabin.phase=airborne?'descending':'impact';cabin.elapsed=0;cabin.fire=cabinClamp(fire);cabin.cause=cause;
+ cabin.final=false;cabin.phase=airborne?'descending':'impact';cabin.elapsed=0;cabin.fire=Math.max(cabin.fire,cabinClamp(fire));cabin.cause=cause;
  const severity=damage?.severity??cabinClamp(Math.abs(sink)/35+Math.max(0,speed-35)/160+Math.abs(bank)*.2+(gear?0:.08)+(airborne||cause==='ONBOARD EXPLOSION'?.65:0));
- cabin.exits=cabinClamp(1-severity*.7,.15,1);
- cabin.sections.forEach((s,i)=>{s.damage=damage?.mode==='fragmented'?1:cabinClamp(severity*[1.13,1,.87][i]);s.fatalities=damage?.mode==='fragmented'?s.occupants:Math.min(s.occupants,Math.floor(s.occupants*cabinClamp((s.damage-.18)*1.18)));s.survivors=s.occupants-s.fatalities;s.injured=Math.floor(s.survivors*s.damage*.7)});
+ cabin.exits=Math.min(cabin.exits,cabinClamp(1-severity*.7,.15,1));
+ cabin.sections.forEach((s,i)=>{s.damage=Math.max(s.damage,damage?.mode==='fragmented'?1:cabinClamp(severity*[1.13,1,.87][i]));s.fatalities=Math.max(s.fatalities,damage?.mode==='fragmented'?s.occupants:Math.min(s.occupants,Math.floor(s.occupants*cabinClamp((s.damage-.18)*1.18))));s.survivors=s.occupants-s.fatalities;s.injured=Math.min(s.survivors,Math.max(s.injured,Math.floor(s.survivors*s.damage*.7)))});
  cabin.impact={speed,sink,bank,airborne};
 }
-export function tickCabin(cabin,dt,grounded){
+export function tickCabin(cabin,dt,grounded,settled=grounded){
  if(cabin.final||cabin.phase==='aboard')return;
  if(!grounded){cabin.phase='descending';return}
- // Resolve the same abstract fire/exit outcome immediately on impact.
+ if(!settled){cabin.phase='sliding';return}
+ // Resolve once the physical incident ends; no evacuation timer.
  for(const s of cabin.sections){
  const escaped=Math.min(s.survivors,Math.floor(s.occupants*cabin.exits));
  const trapped=Math.max(0,s.survivors-escaped),lost=Math.floor(trapped*cabin.fire*(.25+.6*s.damage));

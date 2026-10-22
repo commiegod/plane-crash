@@ -1,14 +1,14 @@
-import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=scrape-20261021';
+import {LIGHT_HANDLING,lightAero,lightSteering} from './light-aircraft.js?v=recovery-20261021';
 import {stallCondition} from './stall-model.js';
-import {assessImpact,assessTouchdown,fracturePanels,wreckGroundMotion,groundImpactRetention,assessScrape} from './crash-model.js?v=scrape-20261021';
+import {assessImpact,assessTouchdown,fracturePanels,wreckGroundMotion,groundImpactRetention,assessScrape} from './crash-model.js?v=recovery-20261021';
 import {createFleetMeshes} from './aircraft-meshes.js';
-import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,buildingContact,loadFactor} from './flight-config.js?v=scrape-20261021';
-import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js';
+import {LIVERIES,CABINS,spawnPoint,taxiRoute,onPavement,buildingCollision,buildingContact,loadFactor} from './flight-config.js?v=recovery-20261021';
+import {createCabin,startIncident,tickCabin,cabinTotals} from './cabin.js?v=recovery-20261021';
 import {createSetup} from './setup-ui.js';
-import {bindJoystick} from './joystick.js?v=scrape-20261021';
+import {bindJoystick} from './joystick.js?v=recovery-20261021';
 
-import {createGraphics} from './graphics.js?v=scrape-20261021';
-import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=scrape-20261021';
+import {createGraphics} from './graphics.js?v=recovery-20261021';
+import {AIRCRAFT,getAircraft} from './aircraft-catalog.js?v=recovery-20261021';
 import {createSystems,activeFaults,triggerFailure,tickSystems,enginePower,thrustImbalance} from './failures.js';
 'use strict';const canvas=document.getElementById('scene'),$=id=>document.getElementById(id);
 const V=(x=0,y=0,z=0)=>({x,y,z}),add=(a,b)=>V(a.x+b.x,a.y+b.y,a.z+b.z),sub=(a,b)=>V(a.x-b.x,a.y-b.y,a.z-b.z),mul=(a,s)=>V(a.x*s,a.y*s,a.z*s),dot=(a,b)=>a.x*b.x+a.y*b.y+a.z*b.z,cross=(a,b)=>V(a.y*b.z-a.z*b.y,a.z*b.x-a.x*b.z,a.x*b.y-a.y*b.x),len=a=>Math.hypot(a.x,a.y,a.z),norm=a=>mul(a,1/(len(a)||1)),mix=(a,b,t)=>add(mul(a,1-t),mul(b,t)),clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
@@ -135,10 +135,10 @@ function groundStep(dt){
  contactTerrain();
 }
 function showReport(safe=false){
- reportShown=true;const t=cabinTotals(cabin);$('tag').textContent=safe?'LANDING REPORT · SAFE TOUCHDOWN':'INCIDENT REPORT · FINAL';$('title').textContent=safe?'Safe landing.':'Flight outcome';
- $('copy').textContent=safe?`${landingQuality==='hard'?'Hard landing':'Smooth touchdown'} at ${Math.round(landingSpeed*1.944)} kt, ${landingSink.toFixed(1)} m/s descent.`:`${crashCause} · ${Math.round(impact*1.944)} kt at initial damage. ${crashProfile?.label||'Impact damage'}.`;
- $('report-content').innerHTML=`<p>${cabin.passengers} passengers + ${cabin.crew} crew · ${cabin.total} aboard</p><div class="report-totals"><div><b>${t.survivors}</b>SURVIVORS</div><div><b>${t.injured}</b>INJURED SURVIVORS</div><div><b>${t.fatalities}</b>FATALITIES</div></div><table class="report-table"><thead><tr><th>Cabin</th><th>Aboard</th><th>Survived</th><th>Fatalities</th></tr></thead><tbody>${cabin.sections.map(s=>`<tr><td>${s.name}</td><td>${s.occupants}</td><td>${s.survivors}</td><td>${s.fatalities}</td></tr>`).join('')}</tbody></table><p>${safe?'Airframe intact.':`Cabin damage ${Math.round(cabin.sections.reduce((a,s)=>a+s.damage,0)/3*100)}% · Fire exposure ${Math.round(cabin.fire*100)}% · Exit availability ${Math.round(cabin.exits*100)}%.`}</p>`;
- $('instructions').textContent='Fictional game outcomes, not real-world survival estimates.';$('start').textContent='NEW FLIGHT →';$('panel').classList.remove('hidden');
+ reportShown=true;const t=cabinTotals(cabin);$('tag').textContent=safe?'LANDING REPORT · SAFE TOUCHDOWN':(cabin.final?'INCIDENT REPORT · FINAL':'INCIDENT REPORT · IN PROGRESS');$('title').textContent=safe?'Safe landing.':'Flight outcome';
+ $('copy').textContent=safe?`${landingQuality==='hard'?'Hard landing':'Smooth touchdown'} at ${Math.round(landingSpeed*1.944)} kt, ${landingSink.toFixed(1)} m/s descent.`:`${crashCause} · ${Math.round(impact*1.944)} kt at latest impact. ${crashProfile?.label||'Impact damage'}.`;
+ $('report-content').innerHTML=`<p>${cabin.passengers} passengers + ${cabin.crew} crew · ${cabin.total} aboard</p><div class="report-totals"><div><b>${t.survivors}</b>SURVIVORS</div><div><b>${t.injured}</b>INJURED SURVIVORS</div><div><b>${t.fatalities}</b>FATALITIES</div></div><table class="report-table"><thead><tr><th>Cabin</th><th>Aboard</th><th>Survived</th><th>Fatalities</th></tr></thead><tbody>${cabin.sections.map(s=>`<tr><td>${s.name}</td><td>${s.occupants}</td><td>${s.survivors}</td><td>${s.fatalities}</td></tr>`).join('')}</tbody></table><p>${safe?(wingDamage.left||wingDamage.right||activeFaults(systems)?'Emergency landing completed with aircraft damage.':'Airframe intact.'):`Cabin damage ${Math.round(cabin.sections.reduce((a,s)=>a+s.damage,0)/3*100)}% · Fire exposure ${Math.round(cabin.fire*100)}% · Exit availability ${Math.round(cabin.exits*100)}%.`}</p>`;
+ $('instructions').textContent=!safe&&!cabin.final?'Aircraft still moving. These provisional totals may change after another impact.':'Fictional game outcomes, not real-world survival estimates.';$('start').textContent='NEW FLIGHT →';$('panel').classList.remove('hidden');
 }
 
 function clearKeys(){controlPitch=0;controlRoll=0;joystick.reset();for(const k in keys)keys[k]=false;document.querySelectorAll('.active').forEach(b=>b.classList.remove('active'))}
@@ -169,21 +169,45 @@ function crash(airborne=false,cause='GROUND CONTACT',contactSpeed=null,contactPo
  }
  for(let i=0;i<parts.length;i++)debris.push({part:parts[i],group:assignments[i]});syncWreck();elapsed=0;clearKeys();
  if(!muted&&audio){const buffer=audio.createBuffer(1,Math.floor(audio.sampleRate*.5),audio.sampleRate),data=buffer.getChannelData(0);for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1)*(1-i/data.length);const src=audio.createBufferSource(),g=audio.createGain();src.buffer=buffer;g.gain.value=.08+crashProfile.severity*.22;src.connect(g);g.connect(audio.destination);src.start();}
- if(crashGroups.some(g=>g?.hitGround))tickCabin(cabin,0,true);
+ if(crashGroups.some(g=>g?.hitGround))tickCabin(cabin,0,true,false);
+}
+function updateImpactOutcome(g,damage,cause){
+ if(damage.severity<=crashProfile.severity)return;
+ crashProfile={...crashProfile,severity:damage.severity,fire:Math.max(crashProfile.fire,damage.fire)};debris=debris.map(d=>({...d}));
+ startIncident(cabin,{speed:len(g.vel),sink:g.vel.y,bank:g.r,airborne:false,fire:crashProfile.fire,gear:false,cause,damage});
 }
 function stepWreck(dt){
- for(const g of crashGroups){if(!g||g.rest)continue;const wasGrounded=g.hitGround,oldPos={...g.pos};g.vel.y-=9.81*dt;g.pos=add(g.pos,mul(g.vel,dt));
+ for(const g of crashGroups){if(!g||g.rest)continue;const wasGrounded=g.hitGround,oldPos={...g.pos};
+ if(crashProfile.mode==='intact'&&g.hitGround){
+  const speed=Math.hypot(g.vel.x,g.vel.z),turn=clamp((keys.right?1:0)-(keys.left?1:0)-stick.x,-1,1),angle=turn*.16*clamp(speed/40,0,1)*dt*(systems.controlsFailed?.2:1);
+  g.vel=rotate(g.vel,0,0,angle);g.y+=angle;
+  // Damaged gear has little braking authority; aerodynamic drag still helps.
+  if(keys.brake){const factor=Math.max(0,speed-(crashProfile.gearCollapsed?1.4:7)*dt)/(speed||1);g.vel.x*=factor;g.vel.z*=factor;}
+ }
+ g.vel.y-=9.81*dt;g.pos=add(g.pos,mul(g.vel,dt));
  g.p+=g.spin.x*dt;g.r+=g.spin.y*dt;g.y+=g.spin.z*dt;
  const bottom=Math.min(...g.members.flatMap(p=>p.verts.map(v=>rotate(sub(add(v,p.center),g.center),g.p,g.r,g.y).y)));
  const gy=ground(g.pos.x,g.pos.z)-bottom;
- if(g.pos.y<=gy||g.hitGround){if(!g.hitGround){const retention=groundImpactRetention(crashProfile.mode,g.vel.y,Math.hypot(g.vel.x,g.vel.z));g.vel.x*=retention;g.vel.z*=retention;}g.hitGround=true;g.pos.y=gy;g.vel.y=0;
+ if(g.pos.y<=gy||g.hitGround){if(!g.hitGround){if(crashProfile.mode==='intact'&&g.vel.y < -8){pos=sub(g.pos,rotate(g.center,g.p,g.r,g.y));vel={...g.vel};pitch=g.p;roll=g.r;yaw=g.y;state='flight';crash(false,'GROUND CONTACT');return;}if(g.members.some(p=>p.cabin||p===parts[0]||p===parts[1]))updateImpactOutcome(g,assessImpact({speed:len(g.vel),sink:g.vel.y,bank:g.r,pitch:g.p,gear:false,fuel:crashFuel}),'SECONDARY GROUND IMPACT');const retention=groundImpactRetention(crashProfile.mode,g.vel.y,Math.hypot(g.vel.x,g.vel.z));g.vel.x*=retention;g.vel.z*=retention;}g.hitGround=true;g.pos.y=gy;g.vel.y=0;
  const sp=Math.hypot(g.vel.x,g.vel.z),motion=wreckGroundMotion(sp,dt,crashProfile.mode,onPavement(g.pos.x,g.pos.z)),next=motion.speed;if(wasGrounded){g.pos.x=oldPos.x+g.vel.x/(sp||1)*motion.distance;g.pos.z=oldPos.z+g.vel.z/(sp||1)*motion.distance;g.pos.y=ground(g.pos.x,g.pos.z)-bottom;}g.vel.x*=next/(sp||1);g.vel.z*=next/(sp||1);g.spin=mul(g.spin,Math.exp(-dt*5));
  if(crashProfile.mode==='intact'){g.p*=Math.exp(-dt*3);g.r*=Math.exp(-dt*3);}
  if(next<.25){g.rest=true;g.vel=V();g.spin=V()}}
  }
+ // An intact skid can still hit a building. Rebuild the wreck from that impact.
+ const body=crashGroups[0];
+ if(body&&crashProfile.mode==='intact'&&!body.rest){
+  const hit=buildingContact(body.pos,spec().visual?.radius||2);
+  if(hit){const into=Math.max(0,-body.vel.x*hit.nx-body.vel.z*hit.nz);body.pos.x+=hit.nx*(hit.depth+.1);body.pos.z+=hit.nz*(hit.depth+.1);
+   if(into>16){pos=sub(body.pos,rotate(body.center,body.p,body.r,body.y));vel={...body.vel};pitch=body.p;roll=body.r;yaw=body.y;state='flight';crash(false,'BUILDING COLLISION',into);return;}
+   body.vel.x+=hit.nx*into;body.vel.z+=hit.nz*into;
+  }
+ }
  syncWreck();const center=crashGroups[0]?.pos||impactPos;const scale=spec().visual?Math.max(.4,spec().visual.length/34):1;
  const angle=yaw+Math.min(elapsed*.04,.5);camera=mix(camera,add(center,V(Math.sin(angle)*46*scale,18*scale,-Math.cos(angle)*46*scale)),1-Math.exp(-dt*1.2));camera.y=Math.max(camera.y,ground(camera.x,camera.z)+5);if(buildingCollision(camera,3))camera.y=Math.max(camera.y,85);target=mix(target,center,1-Math.exp(-dt*2));
- tickCabin(cabin,dt,debris.some(d=>(d.part.cabin||d.part===parts[0]||d.part===parts[1])&&d.hitGround));
+ const cabinBodies=crashGroups.filter(g=>g&&g.members.some(p=>p.cabin||p===parts[0]||p===parts[1]));
+ tickCabin(cabin,dt,cabinBodies.some(g=>g.hitGround),cabinBodies.length>0&&cabinBodies.every(g=>g.rest));
+ if(body){pos=sub(body.pos,rotate(body.center,body.p,body.r,body.y));yaw=body.y;}
+ if(reportShown&&!$('panel').classList.contains('hidden'))showReport(false);
 }
 function touchdown(){const runway=Math.abs(pos.x)<29&&pos.z>=0&&pos.z<2400;landingQuality=assessTouchdown({sink:vel.y,bank:roll,pitch,gear,speed:len(vel),lateral:vel.x*Math.cos(yaw)-vel.z*Math.sin(yaw),approach:spec().approachSpeed||72,blocked:!!buildingCollision(pos,spec().visual?Math.min(spec().visual.span/2,spec().visual.length*.35):spec().geometry==='twin'?10:23)||terrainUnsafe(pos.x,pos.z,len(vel))});if(!['smooth','hard'].includes(landingQuality)){crash();return}state=runway?'landed':'taxi';landingMessage=true;reportShown=false;$('panel').classList.add('hidden');parking=false;landingSpeed=len(vel);landingSink=Math.abs(vel.y);pos.y=ground(pos.x,pos.z)+clearance();vel.y=0;gearCompression=LIGHT_HANDLING[aircraft]?Math.min(LIGHT_HANDLING[aircraft].stroke,landingSink*.035):0;pitch=LIGHT_HANDLING[aircraft]?clamp(pitch,0,.12):0;roll=0;throttle=0;assist=false;elapsed=0;clearKeys();gearUI()}
 // Wing contact is independent of the fuselage landing envelope.
@@ -246,13 +270,13 @@ $('quality').onclick=()=>{$('quality').textContent='GRAPHICS '+graphics.nextQual
 function updateFlightUI(){
  const actual=state==='paused'?saved:state;
  const h=LIGHT_HANDLING[aircraft];$('flaps').classList.toggle('hidden',!h||actual==='crashed');$('flaps').disabled=!h||!['flight','taxi','landed','parked'].includes(state);$('flaps').textContent='FLAPS: '+['UP','TAKEOFF','LANDING'][flapSetting]+(h?' · '+Math.round(flaps*h.flapDegrees)+'°':'');
- $('show-report').classList.toggle('hidden',!(cabin.final||reportShown||landingMessage));$('show-report').textContent=actual==='crashed'?'VIEW CRASH REPORT':'FLIGHT REPORT';$('heading').textContent=String(headingDegrees(yaw)).padStart(3,'0');$('aboard').textContent=cabin.total;
+ $('show-report').classList.toggle('hidden',!(actual==='crashed'||cabin.final||reportShown||landingMessage));$('show-report').textContent=actual==='crashed'?'VIEW CRASH REPORT':'FLIGHT REPORT';$('heading').textContent=String(headingDegrees(yaw)).padStart(3,'0');$('aboard').textContent=cabin.total;
  $('flight-identity').textContent=names[aircraft]+' · '+(AIRCRAFT.find(a=>a.id===aircraft).paintName||(aircraft==='c172'?'Classic blue & white':livery.name));
  $('parking').classList.toggle('hidden',!onGround());$('parking').classList.toggle('engaged',parking);$('parking').textContent=parking?'RELEASE BRAKE':'SET BRAKE';$('parking').disabled=state==='paused';
  $('pushback').classList.toggle('hidden',!['parked','pushback'].includes(actual));$('pushback').disabled=state==='paused';$('pushback').textContent=actual==='pushback'?'STOP PUSHBACK':'PUSHBACK';
  $('taxi-guide').classList.toggle('hidden',actual!=='taxi'||currentConfig?.start==='runway');$('taxi-guide').disabled=state!=='taxi';$('taxi-guide').textContent=taxiAssist?'STOP AUTO TAXI':'AUTO TAXI TO RUNWAY';
  if(state==='parked')$('notice').textContent='Start here: tap Pushback to leave the gate.';
- if(state==='pushback')$('notice').textContent=parking?'Pushback paused. Release the brake to continue.':'Steer while reversing. Tap Stop Pushback to take over.';
+ if(state!=='paused'&&actual==='crashed'&&crashProfile?.mode==='intact'&&!crashGroups[0]?.rest)$('notice').textContent='EMERGENCY SLIDE · Steer gently. Hold brake to slow.';if(state==='pushback')$('notice').textContent=parking?'Pushback paused. Release the brake to continue.':'Steer while reversing. Tap Stop Pushback to take over.';
  if(state==='taxi')$('notice').textContent=taxiAssist?'Auto taxi is driving to the runway. Steer to take over.':parking?'First, tap Release Brake. Then slide Power up.':len(vel)>rotationTarget()?'Ready to lift off! Pull the joystick down gently.':'Increase power. Lift off at '+Math.round(rotationTarget()*1.944)+' KT';
  if(state==='landed')$('notice').textContent=parking?'Brake is set. Release it to taxi or fly again.':(landingQuality==='hard'?'Hard landing. Gear is holding. Taxi or take off again.':'Smooth landing. Steer to taxi, or add power to take off again.');
  if(['taxi','landed'].includes(state)&&!parking&&groundSurface().grass>0)$('notice').textContent='Grass slows the plane. Steer back to pavement for takeoff.';
@@ -271,7 +295,7 @@ $('throttle-slider').oninput=e=>setThrottle(e.target.value);
 $('nav-toggle').onclick=()=>{const el=$('nav-map');el.classList.toggle('hidden');$('nav-toggle').setAttribute('aria-expanded',String(!el.classList.contains('hidden')))};$('taxi-guide').onclick=toggleTaxi;
 $('settings-toggle').onclick=()=>{const el=$('settings');el.classList.toggle('hidden');$('settings-toggle').setAttribute('aria-expanded',String(!el.classList.contains('hidden')))};
 $('close-settings').onclick=()=>{$('settings').classList.add('hidden');$('settings-toggle').setAttribute('aria-expanded','false')};
-$('show-report').onclick=()=>{if(cabin.final||reportShown||landingMessage)showReport(landingMessage&&(state==='paused'?saved:state)!=='crashed')};
+$('show-report').onclick=()=>{if((state==='paused'?saved:state)==='crashed'||cabin.final||reportShown||landingMessage)showReport(landingMessage&&(state==='paused'?saved:state)!=='crashed')};
 $('dismiss-report').onclick=()=>{$('panel').classList.add('hidden')};
 const setup=createSetup({start:startConfigured,prepare:id=>graphics.loadAircraft(id),opening(){state='ready';clearKeys();$('panel').classList.add('hidden')},preview(config){graphics.loadAircraft(config.aircraft);aircraft=config.aircraft;livery=LIVERIES.find(l=>l.id===config.livery);systems=createSystems(spec());pos=V(540,190,350);yaw=0;pitch=0;roll=0;gear=!!spec().fixedGear;buildAircraft();graphics.resetCamera()}});
 $('new-flight').onclick=()=>setup.open();
