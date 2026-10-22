@@ -35,3 +35,9 @@ export function assessTouchdown({sink=0,bank=0,pitch=0,gear=true,speed=0,lateral
  if(descent>5)return 'collapse';
  return descent>2.5?'hard':'smooth';
 }
+
+// Shallow contacts retain tangential motion; steep impacts spend more energy at contact.
+export function groundImpactRetention(mode,sink,speed){
+ const normal=Math.max(0,-sink),ratio=normal/Math.max(1,speed);
+ return Math.max(.25,(mode==='intact'?.97:mode==='sections'?.90:.78)-Math.min(.5,ratio*.8));
+}

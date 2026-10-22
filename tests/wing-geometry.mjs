@@ -1,0 +1,8 @@
+import assert from 'node:assert/strict';
+import * as T from '../assets/three.module.js';
+import {splitWingGeometry,createWingBreakup} from '../wing-breakup.js';
+const source=new T.BoxGeometry(10,2,2),matrix=new T.Matrix4();
+function area(g){const p=g.attributes.position;let total=0;for(let i=0;i<p.count;i+=3){const a=new T.Vector3().fromBufferAttribute(p,i),b=new T.Vector3().fromBufferAttribute(p,i+1),c=new T.Vector3().fromBufferAttribute(p,i+2);total+=b.sub(a).cross(c.sub(a)).length()/2;}return total;}
+for(const side of [-1,1])for(const cut of [3,5]){const {kept,lost}=splitWingGeometry(source,matrix,side,cut);assert(Math.abs(area(kept)+area(lost)-88)<.001);for(const g of [kept,lost]){assert(g.attributes.position.array.every(Number.isFinite));assert(g.attributes.uv);assert(g.attributes.normal.array.every(Number.isFinite));}assert([...lost.attributes.position.array].filter((_,i)=>i%3===0).every(x=>side*x>=cut-1e-6));}
+const scene=new T.Scene(),root=new T.Group(),model=new T.Group(),mesh=new T.Mesh(source,new T.MeshStandardMaterial());scene.add(root);root.add(model);model.add(mesh);const breakup=createWingBreakup(scene),d={side:1,cut:3,center:{x:4,y:0,z:0},pos:{x:20,y:5,z:0},p:0,r:0,y:0},state={wingDamage:{right:.28},wingDebris:[d]};breakup.update(model,root,state);assert.notEqual(mesh.geometry,source);assert.equal(scene.children.length,2);d.pos.x=25;breakup.update(model,root,state);assert.equal(scene.children[1].position.x,25);breakup.update(model,root,{wingDamage:{},wingDebris:[]});assert.equal(mesh.geometry,source);assert.equal(scene.children.length,1);
+console.log('PASS wing clipping area, cut bounds, UV/normal retention, detached transforms and restart restoration');
