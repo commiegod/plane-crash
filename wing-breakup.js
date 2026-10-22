@@ -1,3 +1,4 @@
+import {tearEdge,exposedWing} from './c172-damage.js?v=damage-20261022';
 import * as T from './assets/three.module.js';
 // Split authored triangles at an aircraft-local span station, retaining paint UVs.
 export function splitWingGeometry(source,matrix,side,cut){
@@ -10,15 +11,16 @@ export function splitWingGeometry(source,matrix,side,cut){
  return {kept:make(kept).applyMatrix4(matrix.clone().invert()),lost:make(lost)};
 }
 export function createWingBreakup(scene){
- let flight=null;const originals=new Map(),fragments=new Map();
- function reset(){for(const [mesh,g] of originals){if(mesh.geometry!==g)mesh.geometry.dispose();mesh.geometry=g;}originals.clear();for(const group of fragments.values()){group.traverse(o=>{if(o.isMesh)o.geometry.dispose()});scene.remove(group);}fragments.clear();}
+ let flight=null;const originals=new Map(),fragments=new Map(),seams=new Map();
+ function disposeStructure(group){group.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose();}});group.removeFromParent();}
+ function reset(){for(const group of seams.values())disposeStructure(group);seams.clear();for(const [mesh,g] of originals){if(mesh.geometry!==g)mesh.geometry.dispose();mesh.geometry=g;}originals.clear();for(const group of fragments.values()){group.traverse(o=>{if(o.isMesh){o.geometry.dispose();if(o.userData.damageStructure)o.material.dispose();}});scene.remove(group);}fragments.clear();}
  return {update(model,root,s){
  if(flight!==s.wingDamage){reset();flight=s.wingDamage;}if(!flight)return;
  root.updateMatrixWorld(true);const inverse=root.matrixWorld.clone().invert();
- for(const d of s.wingDebris||[]){if(!fragments.has(d)){const group=new T.Group();model.traverse(o=>{if(!o.isMesh||!o.visible)return;let parent=o.parent;while(parent&&parent!==model){if(!parent.visible)return;parent=parent.parent;}
+ for(const d of s.wingDebris||[]){if(!fragments.has(d)){const group=new T.Group(),seam=[];if(seams.has(d.side)){disposeStructure(seams.get(d.side));seams.delete(d.side);}model.traverse(o=>{if(!o.isMesh||!o.visible||o.userData.damageStructure)return;let parent=o.parent;while(parent&&parent!==model){if(!parent.visible)return;parent=parent.parent;}
  const matrix=new T.Matrix4().multiplyMatrices(inverse,o.matrixWorld);const bounds=new T.Box3().setFromBufferAttribute(o.geometry.attributes.position).applyMatrix4(matrix);if((d.side>0?bounds.max.x:-bounds.min.x)<=d.cut)return;
- const split=splitWingGeometry(o.geometry,matrix,d.side,d.cut);if(!originals.has(o))originals.set(o,o.geometry);else if(o.geometry!==originals.get(o))o.geometry.dispose();o.geometry=split.kept;
- split.lost.translate(-d.center.x,-d.center.y,-d.center.z);const mesh=new T.Mesh(split.lost,o.material);mesh.castShadow=mesh.receiveShadow=true;group.add(mesh);});scene.add(group);fragments.set(d,group);}
+ const split=splitWingGeometry(o.geometry,matrix,d.side,d.cut);if(!originals.has(o))originals.set(o,o.geometry);else if(o.geometry!==originals.get(o))o.geometry.dispose();o.geometry=split.kept;if(s.aircraft==='c172'){seam.push(...tearEdge(split.kept,matrix,d.side,d.cut));tearEdge(split.lost,new T.Matrix4(),d.side,d.cut);}
+ split.lost.translate(-d.center.x,-d.center.y,-d.center.z);const mesh=new T.Mesh(split.lost,o.material);mesh.castShadow=mesh.receiveShadow=true;group.add(mesh);});if(s.aircraft==='c172'&&seam.length){const structure=exposedWing(seam,d.side,d.cut);const modelMatrix=new T.Matrix4().multiplyMatrices(inverse,model.matrixWorld).invert();structure.applyMatrix4(modelMatrix);model.add(structure);seams.set(d.side,structure);const cap=exposedWing(seam,d.side,d.cut);cap.position.set(-d.center.x,-d.center.y,-d.center.z);group.add(cap);}scene.add(group);fragments.set(d,group);}
  const group=fragments.get(d);group.position.set(d.pos.x,d.pos.y,d.pos.z);group.rotation.set(-d.p,d.y,d.r,'YXZ');}
  },reset};
 }

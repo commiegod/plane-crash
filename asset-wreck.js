@@ -1,3 +1,4 @@
+import {deformCessnaVertex} from './c172-damage.js?v=damage-20261022';
 import {deformWreckVertex} from './wreck-deformation.js';
 import * as T from './assets/three.module.js';
 // Cut the displayed mesh into the existing physics bodies, retaining its UVs and materials.
@@ -12,7 +13,7 @@ export function createAssetWreck(scene,cuts={tail:-1.7,width:1}){
    if(!o.isMesh||!o.visible)return;
    let parent=o.parent;while(parent&&parent!==model){if(!parent.visible)return;parent=parent.parent;}
    const g=(o.geometry.index?o.geometry.toNonIndexed():o.geometry.clone()).applyMatrix4(new T.Matrix4().multiplyMatrices(inverse,o.matrixWorld));
-   const p=g.attributes.position;if(damage){for(let i=0;i<p.count;i++){const v=deformWreckVertex(p.getX(i),p.getY(i),p.getZ(i),bounds,damage);p.setXYZ(i,...v);}g.computeVertexNormals();}const n=g.attributes.normal,uv=g.attributes.uv;
+   const p=g.attributes.position;if(damage){for(let i=0;i<p.count;i++){const name=o.userData.name||o.name;let v=damage.aircraft==='c172'&&/^(Left|Right|Nose)Wheel/.test(name)?[p.getX(i),p.getY(i),p.getZ(i)]:deformWreckVertex(p.getX(i),p.getY(i),p.getZ(i),bounds,damage);if(damage.aircraft==='c172')v=deformCessnaVertex(...v,o.userData.name||o.name,damage);p.setXYZ(i,...v);}g.computeVertexNormals();}const n=g.attributes.normal,uv=g.attributes.uv;
    const clip=(polygon,axis,bound,sign)=>{if(polygon.every(v=>Math.abs(v[axis]-bound)<1e-7))return sign>0?polygon:[];const out=[];for(let k=0;k<polygon.length;k++){const a=polygon[k],b=polygon[(k+1)%polygon.length],da=sign*(a[axis]-bound),db=sign*(b[axis]-bound);if(da>=0)out.push(a);if((da>=0)!==(db>=0)){const t=da/(da-db);out.push(a.map((v,j)=>v+(b[j]-v)*t));}}return out;};
    function emit(polygon,d){if(polygon.length<3)return;const key=d.group+':'+o.material.uuid;let b=buckets.get(key);if(!b){b={d,material:o.material,p:[],n:[],uv:[]};buckets.set(key,b)}for(let k=1;k<polygon.length-1;k++)for(const v of [polygon[0],polygon[k],polygon[k+1]]){b.p.push(v[0]-d.part.center.x,v[1]-d.part.center.y,v[2]-d.part.center.z);b.n.push(v[3],v[4],v[5]);b.uv.push(v[6],v[7]);}}
    for(let i=0;i<p.count;i+=3){
