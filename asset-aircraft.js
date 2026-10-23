@@ -1,14 +1,14 @@
-import {createWingBreakup} from './wing-breakup.js?v=damage-20261022';
-import {AIRLINER_CONTROLS} from './airliner-controls.js?v=damage-20261022';
-import {createAircraftDisplays} from './aircraft-displays.js?v=damage-20261022';
-import {createAssetWreck} from './asset-wreck.js?v=damage-20261022';
+import {createWingBreakup} from './wing-breakup.js?v=groundfix-20261022';
+import {AIRLINER_CONTROLS} from './airliner-controls.js?v=groundfix-20261022';
+import {createAircraftDisplays} from './aircraft-displays.js?v=groundfix-20261022';
+import {createAssetWreck} from './asset-wreck.js?v=groundfix-20261022';
 import * as T from './assets/three.module.js';
 import {GLTFLoader} from './assets/GLTFLoader.js';
 import {mergeGeometries} from './assets/BufferGeometryUtils.js';
 // Authored asset renderer. See assets/c172p/NOTICE.md for model source and license.
 export function createAssetAircraft(scene,config={id:'c172',folder:'c172p',file:'c172p',clearance:1.5,eye:[.21,.273,-.36]}){
  let model=null,error=null,loading=null,offset=new T.Vector3(),cockpit=false,clock=0,bindings=[],propeller=null;const propellers=[],retractors=[];const displays=createAircraftDisplays(),gears=[],horizons=[];let paint=null;const paintCache=new Map();
- const wreck=createAssetWreck(scene,config.cuts),wingBreakup=createWingBreakup(scene);
+ const wreck=createAssetWreck(scene,config.cuts,config.ground),wingBreakup=createWingBreakup(scene,config.ground);
  const root=new T.Group();scene.add(root);root.visible=false;
  const ready=()=>!!model;
  function load(){if(loading)return loading;loading=Promise.all([new GLTFLoader().loadAsync(`./assets/${config.folder}/${config.file}.glb?v=fleet2`),fetch(`./assets/${config.folder}/instruments.json`).then(r=>{if(!r.ok)throw Error('Instrument metadata unavailable');return r.json()}),['dc3','dc9','c130','g650','dc10','b747'].includes(config.id)?fetch(`./assets/${config.folder}/flap-controls.json`).then(r=>{if(!r.ok)throw Error('Flap metadata unavailable');return r.json()}):Promise.resolve([])]).then(([gltf,animations,flapAnimations])=>{animations.push(...flapAnimations);

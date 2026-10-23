@@ -1,6 +1,6 @@
-import {onPavement} from './flight-config.js?v=damage-20261022';
-import {createAirportDamage} from './airport-damage.js?v=damage-20261022';
-import {createAuthoredFleet} from './authored-fleet.js?v=damage-20261022';
+import {onPavement} from './flight-config.js?v=groundfix-20261022';
+import {createAirportDamage} from './airport-damage.js?v=groundfix-20261022';
+import {createAuthoredFleet} from './authored-fleet.js?v=groundfix-20261022';
 import {airframeSection} from './aircraft-meshes.js';
 import {createCockpit} from './cockpit.js';
 import {partitionPavement} from './airport-surfaces.js';
@@ -15,7 +15,7 @@ export function createGraphics(canvas,ground){
  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.9;
  const scene=new T.Scene();scene.background=new T.Color('#a4b9c3');scene.fog=new T.FogExp2('#a7b8bd',.00016);
  const camera=new T.PerspectiveCamera(49,innerWidth/innerHeight,1,19000);
- const flightDeck=createCockpit();const assetAircraft=createAuthoredFleet(scene);
+ const flightDeck=createCockpit();const assetAircraft=createAuthoredFleet(scene,ground);
  const sun=new T.DirectionalLight('#fff0d3',3.1);sun.position.set(-500,800,-350);sun.castShadow=true;sun.shadow.mapSize.set(touch?1024:2048,touch?1024:2048);sun.shadow.camera.left=-100;sun.shadow.camera.right=100;sun.shadow.camera.top=100;sun.shadow.camera.bottom=-100;sun.shadow.camera.near=10;sun.shadow.camera.far=1600;sun.shadow.bias=-.0002;sun.shadow.normalBias=.15;scene.add(sun,sun.target);const hemi=new T.HemisphereLight('#c4d8ed','#78745c',1.2);scene.add(hemi);let lightMode=0,daySky=null;
  const envReady=new HDRLoader().loadAsync('./assets/sky.hdr').then(hdr=>{hdr.mapping=T.EquirectangularReflectionMapping;daySky=hdr;if(lightMode===0)scene.background=hdr;scene.backgroundIntensity=.85;scene.environment=hdr;scene.environmentIntensity=.65}).catch(()=>{});
  const loader=new T.TextureLoader(),aniso=Math.min(touch?2:8,renderer.capabilities.getMaxAnisotropy());

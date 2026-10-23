@@ -47,3 +47,17 @@ export function assessScrape({normalSpeed=0,depth=0,speed=0,wear=0,dt=0}){
  const next=wear+Math.max(0,dt)*Math.max(0,speed-8)*(.006+Math.max(0,depth)*.035);
  return {wear:next,breaks:normalSpeed>4.5||depth>.85||next>=1};
 }
+
+// Match the rendered 18000 m terrain mesh, including its triangle diagonal.
+export function terrainMeshHeight(x,z,ground){
+ const ix=Math.floor((x+9000)/60),iz=Math.floor((z+9000)/60),x0=ix*60-9000,z0=iz*60-9000,u=(x-x0)/60,v=(z-z0)/60;
+ const a=ground(x0,z0),b=ground(x0+60,z0),c=ground(x0,z0+60),d=ground(x0+60,z0+60);
+ return u+v<=1?a+u*(b-a)+v*(c-a):d+(1-u)*(c-d)+(1-v)*(b-d);
+}
+export function supportBox(points){
+ const lo={x:Infinity,y:Infinity,z:Infinity},hi={x:-Infinity,y:-Infinity,z:-Infinity};for(const p of points)for(const k of ['x','y','z']){lo[k]=Math.min(lo[k],p[k]);hi[k]=Math.max(hi[k],p[k]);}
+ const out=[];if(!Number.isFinite(lo.x))return out;for(const x of [lo.x,(lo.x+hi.x)/2,hi.x])for(const y of [lo.y,(lo.y+hi.y)/2,hi.y])for(const z of [lo.z,(lo.z+hi.z)/2,hi.z])out.push({x,y,z});return out;
+}
+export function wreckSupportHeight(points,pos,pitch,roll,yaw,ground){
+ let floor=-Infinity;for(const p of points){const x=p.x*Math.cos(roll)-p.y*Math.sin(roll),y=p.x*Math.sin(roll)+p.y*Math.cos(roll),h=y*Math.cos(pitch)+p.z*Math.sin(pitch),z=-y*Math.sin(pitch)+p.z*Math.cos(pitch),wx=x*Math.cos(yaw)+z*Math.sin(yaw),wz=-x*Math.sin(yaw)+z*Math.cos(yaw);floor=Math.max(floor,terrainMeshHeight(pos.x+wx,pos.z+wz,ground)-h+.12);}return Number.isFinite(floor)?floor:terrainMeshHeight(pos.x,pos.z,ground)+.3;
+}

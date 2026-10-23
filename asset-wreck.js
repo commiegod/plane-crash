@@ -1,8 +1,9 @@
-import {deformCessnaVertex} from './c172-damage.js?v=damage-20261022';
+import {geometrySupport,liftAboveGround} from './mesh-ground-support.js?v=groundfix-20261022';
+import {deformCessnaVertex} from './c172-damage.js?v=groundfix-20261022';
 import {deformWreckVertex} from './wreck-deformation.js';
 import * as T from './assets/three.module.js';
 // Cut the displayed mesh into the existing physics bodies, retaining its UVs and materials.
-export function createAssetWreck(scene,cuts={tail:-1.7,width:1}){
+export function createAssetWreck(scene,cuts={tail:-1.7,width:1},ground){
  const root=new T.Group();root.visible=false;scene.add(root);let last=null,objects=[];
  function clear(){root.traverse(o=>{if(o.isMesh)o.geometry.dispose()});root.clear();objects=[];last=null;root.visible=false;}
  function build(model,aircraftRoot,debris,damage){
@@ -29,7 +30,8 @@ export function createAssetWreck(scene,cuts={tail:-1.7,width:1}){
     }
    }g.dispose();
   });
-  for(const b of buckets.values()){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(b.p,3));if(b.n.length)g.setAttribute('normal',new T.Float32BufferAttribute(b.n,3));else g.computeVertexNormals();if(b.uv.length)g.setAttribute('uv',new T.Float32BufferAttribute(b.uv,2));const mesh=new T.Mesh(g,b.material);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);objects.push({mesh,d:b.d});}
+  for(const d of representatives.values())if(d.body)d.body.support=[];
+  for(const b of buckets.values()){const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(b.p,3));if(b.n.length)g.setAttribute('normal',new T.Float32BufferAttribute(b.n,3));else g.computeVertexNormals();if(b.uv.length)g.setAttribute('uv',new T.Float32BufferAttribute(b.uv,2));const mesh=new T.Mesh(g,b.material);mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);objects.push({mesh,d:b.d});if(b.d.body){const c=b.d.body.center,o=b.d.part.center;b.d.body.support.push(...geometrySupport(g,{x:o.x-c.x,y:o.y-c.y,z:o.z-c.z}));}}
  }
- return {clear,root,update(model,aircraftRoot,debris,damage){if(!debris.length)return false;if(last!==debris)build(model,aircraftRoot,debris,damage);root.visible=true;for(const {mesh,d} of objects){mesh.position.set(d.pos.x,d.pos.y,d.pos.z);mesh.rotation.set(-d.p,d.y,d.r,'YXZ');}return true;},hide(){root.visible=false;if(last)clear()}};
+ return {clear,root,update(model,aircraftRoot,debris,damage){if(!debris.length)return false;if(last!==debris)build(model,aircraftRoot,debris,damage);root.visible=true;const lifts=new Map();for(const d of debris)if(d.body&&!lifts.has(d.group))lifts.set(d.group,liftAboveGround(d.body,ground));for(const d of debris)d.pos.y+=lifts.get(d.group)||0;for(const {mesh,d} of objects){mesh.position.set(d.pos.x,d.pos.y,d.pos.z);mesh.rotation.set(-d.p,d.y,d.r,'YXZ');}return true;},hide(){root.visible=false;if(last)clear()}};
 }
