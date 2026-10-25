@@ -59,3 +59,7 @@ Piper PA-34 Seneca II by Torsten Dreyer and FlightGear community contributors, w
 ## October 20 Boeing 727 addition
 
 - Boeing 727-230: [source, modifications and GPLv2 license](assets/b727/NOTICE.md), with original Lufthansa paint, modeled analog cockpit, and three engines.
+
+## Experimental structural physics lab
+
+The optional Cessna Physics Lab uses **cannon-es 0.20.0**, by the cannon.js and cannon-es contributors, under the [MIT license](assets/cannon-es-LICENSE.txt). [Upstream source](https://github.com/pmndrs/cannon-es). The lab reuses the credited FlightGear C172P aircraft and textures; its runtime mesh partitioning does not change the original asset archive.
