@@ -13,3 +13,13 @@ Tests: free flight, runway takeoff, localized wing strike against a fixed block,
 Automated tests use the actual glTF geometry (textures omitted only in Node): finite partitions, ordinary-flight integrity, stationary ground stability, takeoff, impact-driven tip separation while major structures survive, a tip impulse transmitted to the cabin, gear failure, continuing skid momentum, settling, above-ground collision bounds, deterministic 30/60/120 Hz stepping, control response after tip loss, reset restoration. Run `node tests/structural-lab.mjs`.
 
 Physical iPad performance and handling remain an acceptance gate before any fleet migration. The lab is small and flat; its performance cannot establish full-airport performance.
+
+## Full-airport Cessna option (2026-10-26)
+
+Options → Cessna Physics switches between standard and experimental physics and restarts the Cessna flight. The selection lasts for the current page session; other aircraft retain standard physics.
+
+`airport-structure.js` installs the visible terrain's 60 m triangular heightfield and fixed collision boxes for the terminal, piers, jet bridges, tower and hangars. The Cessna uses one continuous connected-body simulation while flying, taxiing, landing and breaking apart. It retains the existing joystick, throttle, flaps, brake, stop-pushback, pause, restart and optional report controls. Cabin impact speed determines the simplified report severity; wing separation by itself does not kill occupants.
+
+Experimental limitations: manual flight only; exterior cameras; fixed buildings rather than destructible structures; coarse aircraft collision shapes; simplified aerodynamic coefficients and occupant outcomes. Aircraft mass is currently the prototype's fixed mass, not passenger/fuel-dependent. Physical iPad validation is still required. No fleet migration is enabled by this option.
+
+Checks: `node tests/structural-lab.mjs`, `node tests/airport-structure.mjs`, `node tests/airport-game.cjs`, and the existing standard-aircraft regression suite.

@@ -9,7 +9,7 @@ export function partitionGeometry(geometry,planes){const g=geometry.index?geomet
  for(let i=0;i<p.count;i+=3){let poly=[];for(let j=i;j<i+3;j++)poly.push([p.getX(j),p.getY(j),p.getZ(j),n?.getX(j)||0,n?.getY(j)||0,n?.getZ(j)||0,uv?.getX(j)||0,uv?.getY(j)||0]);for(const [axis,cut,sign] of planes)poly=clipPolygon(poly,axis,cut,sign);for(let j=1;j<poly.length-1;j++)for(const a of [poly[0],poly[j],poly[j+1]]){vertices.push(...a.slice(0,3));normals.push(...a.slice(3,6));tex.push(...a.slice(6,8));}}
  if(g!==geometry)g.dispose();const out=new T.BufferGeometry();out.setAttribute('position',new T.Float32BufferAttribute(vertices,3));out.setAttribute('normal',new T.Float32BufferAttribute(normals,3));out.setAttribute('uv',new T.Float32BufferAttribute(tex,2));return out;
 }
-export async function loadStructureModel(){const {scene:model}=await new GLTFLoader().loadAsync('../assets/c172p/c172p.glb');return buildStructureModel(model);}
+export async function loadStructureModel(){const {scene:model}=await new GLTFLoader().loadAsync(new URL('../assets/c172p/c172p.glb',import.meta.url).href);return buildStructureModel(model);}
 export function buildStructureModel(model){model.rotation.y=Math.PI/2;model.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(model);model.position.set(0,-1.5-bounds.min.y,-(bounds.min.z+bounds.max.z)/2);model.updateMatrixWorld(true);
  const groups=Object.fromEntries(Object.keys(PARTS).map(id=>[id,new T.Group()])),batches=new Map();
  model.traverse(o=>{if(!o.isMesh)return;const name=o.userData.name||o.name;if(/hotspot|FastProp|Propeller.Fast|courtesyon|BeaconOffX|^landinglight$|^taxilight$/i.test(name))return;
