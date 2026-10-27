@@ -23,3 +23,11 @@ Options → Cessna Physics switches between standard and experimental physics an
 Experimental limitations: manual flight only; exterior cameras; fixed buildings rather than destructible structures; coarse aircraft collision shapes; simplified aerodynamic coefficients and occupant outcomes. Aircraft mass is currently the prototype's fixed mass, not passenger/fuel-dependent. Physical iPad validation is still required. No fleet migration is enabled by this option.
 
 Checks: `node tests/structural-lab.mjs`, `node tests/airport-structure.mjs`, `node tests/airport-game.cjs`, and the existing standard-aircraft regression suite.
+
+## Local building fracture (2026-10-27)
+
+The experimental airport option now replaces the fixed building boxes with compound colliders constructed from the rendered building sections. A normal-speed/impact-energy threshold separates scuffing from structural detachment. A sufficiently heavy hit can release up to two touching neighbors; unrelated sections remain anchored. Removed sections become rigid bodies in the aircraft's physics world and retain aircraft/terrain collisions. A 24-section debris limit bounds simulation cost. Brief separation grace excludes building/debris self-collisions for 0.2 seconds to avoid explosive responses from overlapping decorative layers; aircraft and terrain collision remain active throughout.
+
+Options → Test Building Impact restarts the experimental Cessna aimed at a terminal pier. Restart or leaving experimental mode restores the building meshes. This is localized, game-tuned fracture, not a structural load-bearing building solver. It does not simulate progressive whole-building collapse. The previous fixed-building limitation above applies to the earlier airport release.
+
+Run `node tests/building-structure.mjs` for scrape-versus-impact behavior, locality, real debris colliders, removed collider checks, settling, rendering synchronization and restoration.

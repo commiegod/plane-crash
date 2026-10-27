@@ -31,7 +31,7 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
   const constraint=new C.LockConstraint(bodies[cfg.parent],bodies[id],{maxForce:2e7});constraint.collideConnected=false;world.addConstraint(constraint);
   joints.push({id,parent:cfg.parent,constraint,strength:cfg.strength,stress:0,overload:0,broken:false});
  }
- function updateCollisionFamilies(){const parent={};for(const id of Object.keys(bodies))parent[id]=id;const root=id=>parent[id]===id?id:root(parent[id]);for(const j of joints)if(!j.broken)parent[root(j.id)]=root(j.parent);const entries=Object.entries(bodies);entries.forEach(([id,b],i)=>b.collisionFilterGroup=1<<(i+1));for(const [id,b] of entries){b.collisionFilterMask=1;for(const [other,o] of entries)if(root(id)!==root(other))b.collisionFilterMask|=o.collisionFilterGroup;}}
+ function updateCollisionFamilies(){const parent={};for(const id of Object.keys(bodies))parent[id]=id;const root=id=>parent[id]===id?id:root(parent[id]);for(const j of joints)if(!j.broken)parent[root(j.id)]=root(j.parent);const entries=Object.entries(bodies);entries.forEach(([id,b],i)=>b.collisionFilterGroup=1<<(i+1));for(const [id,b] of entries){b.collisionFilterMask=1|(1<<14)|(1<<15);for(const [other,o] of entries)if(root(id)!==root(other))b.collisionFilterMask|=o.collisionFilterGroup;}}
  updateCollisionFamilies();
  function breakJoint(j,reason='connection overloaded'){if(j.broken)return;j.broken=true;world.removeConstraint(j.constraint);bodies[j.id].wakeUp();bodies[j.parent].wakeUp();events.push({time,id:j.id,reason});updateCollisionFamilies();}
  function attached(id){if(!bodies[id])return false;if(id==='cabin')return true;const j=joints.find(j=>j.id===id);return !!j&&!j.broken&&attached(j.parent);}

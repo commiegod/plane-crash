@@ -1,12 +1,23 @@
 import * as T from './assets/three.module.js';
 // Localized visual damage. The airport is restored when a new flight starts.
 export function createAirportDamage(scene,ground,limit=96){
- const sections=[],broken=[],bodies=[],dummy=new T.Object3D();let incident=null,flight=null;const scuffed=new Map();
+ const sections=[],broken=[],bodies=[],dummy=new T.Object3D();let incident=null,flight=null,structure=null;const scuffed=new Map();
  const rubble=new T.InstancedMesh(new T.BoxGeometry(1,1,1),new T.MeshStandardMaterial({color:0xffffff,roughness:.92}),limit);rubble.count=0;rubble.castShadow=rubble.receiveShadow=true;rubble.frustumCulled=false;scene.add(rubble);
- function register(mesh,index,size,position,material){sections.push({mesh,index,size,position,material});}
+ function register(mesh,index,size,position,material){mesh.frustumCulled=false;sections.push({mesh,index,size,position,material});}
  function reset(){for(const b of broken){b.mesh.setMatrixAt(b.index,b.matrix);b.mesh.instanceMatrix.needsUpdate=true;}for(const [b,color] of scuffed){b.mesh.setColorAt(b.index,color);b.mesh.instanceColor.needsUpdate=true;}scuffed.clear();broken.length=bodies.length=0;rubble.count=0;incident=null;}
  function distance(b,p){const q=b.position,h=b.size;return Math.hypot(Math.max(0,Math.abs(p.x-q[0])-h[0]/2),Math.max(0,Math.abs(p.y-q[1])-h[1]/2),Math.max(0,Math.abs(p.z-q[2])-h[2]/2));}
- function update(s,dt){const state=s.state==='paused'?s.saved:s.state;
+ function update(s,dt){
+ if(s.structural&&s.structuralBuildings){
+  if(structure!==s.structuralBuildings){reset();structure=s.structuralBuildings;}
+  for(const c of structure.cells){const b=sections[c.id];if(!b)continue;
+   if(c.scuffed&&!scuffed.has(b)){const color=new T.Color(1,1,1);if(b.mesh.instanceColor)b.mesh.getColorAt(b.index,color);else for(let i=0;i<b.mesh.count;i++)b.mesh.setColorAt(i,new T.Color(1,1,1));scuffed.set(b,color.clone());b.mesh.setColorAt(b.index,color.multiplyScalar(.65));b.mesh.instanceColor.needsUpdate=true;}
+   if(!c.broken)continue;
+   if(!broken.some(x=>x.source===b)){const matrix=new T.Matrix4();b.mesh.getMatrixAt(b.index,matrix);broken.push({...b,matrix,source:b});}
+   dummy.position.copy(c.body.position);dummy.quaternion.copy(c.body.quaternion);dummy.scale.set(...b.size);dummy.updateMatrix();b.mesh.setMatrixAt(b.index,dummy.matrix);b.mesh.instanceMatrix.needsUpdate=true;
+  }return;
+ }
+ if(structure){reset();structure=null;}
+ const state=s.state==='paused'?s.saved:s.state;
  if(s.systems&&flight!==s.systems){reset();flight=s.systems;}
  if(state==='ready'){reset();return;}if(s.state==='paused')return;
  if(state!=='crashed'&&s.scrape&&!s.scrape.terrain&&(s.scrape.normalSpeed>2||s.scrape.speed>12)&&scuffed.size<12){
