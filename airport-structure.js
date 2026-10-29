@@ -1,8 +1,8 @@
 import {createBuildingStructure} from './building-structure.js';
 import * as C from './assets/cannon-es.js';
 import * as T from './assets/three.module.js';
-import {createStructure} from './experimental/structure-physics.js?v=cruise-20261029';
-import {loadStructureModel} from './experimental/structure-model.js?v=cruise-20261029';
+import {createStructure} from './experimental/structure-physics.js?v=stall-20261029';
+import {loadStructureModel} from './experimental/structure-model.js?v=stall-20261029';
 import {terrainMeshHeight} from './crash-model.js';
 export function airportBuildingBoxes(){
  const b=[{x:885,y:24.5,z:1300,w:119,h:29,l:1484},{x:975,y:37.5,z:2080,w:17,h:55,l:17},{x:975,y:69.5,z:2080,w:36,h:11,l:36}];
@@ -28,6 +28,6 @@ export function startAirportStructure(model,ground,pose,sections=null){
  const center=b.pointToWorldFrame(new C.Vec3(model.definitions.cabin.center.x,model.definitions.cabin.center.y,model.definitions.cabin.center.z).negate());
  const hits=sim.hits.splice(0),events=sim.events.slice(eventIndex);eventIndex=sim.events.length;
  const grounded=sim.world.contacts.some(c=>(c.bi.surface&&c.bj.collisionResponse&&c.ni.y>.45&&sim.attached(c.bj.part))||(c.bj.surface&&c.bi.collisionResponse&&c.ni.y<-.45&&sim.attached(c.bi.part)));
- return {pos:{...center},vel:{...b.velocity},pitch:-rotation.x,roll:rotation.z,yaw:rotation.y,grounded,hits,events};
+ return {pos:{...center},vel:{...b.velocity},pitch:-rotation.x,roll:rotation.z,yaw:rotation.y,grounded,hits,events,stall:sim.stall};
  },breakup(){for(const j of sim.joints)sim.breakJoint(j,'onboard explosion');}};
 }

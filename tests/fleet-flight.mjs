@@ -16,6 +16,7 @@ for(const id of FLEET_IDS.filter(id=>!process.env.FLEET_TEST_IDS||process.env.FL
  function fly(seconds,inputs={}){for(let i=0;i<seconds*120;i++)sim.step({...base,...inputs});}
  function bank(){const right=cabin.vectorToWorldFrame({x:1,y:0,z:0}),up=cabin.vectorToWorldFrame({x:0,y:1,z:0});return Math.atan2(right.y,up.y);}
  fly(120);
+ assert(!sim.stall.warning&&!sim.stall.stalled,id+' cruise has no false stall alert');
  assert.ok(Math.abs(cabin.position.y-2000)<85,id+' cruise altitude drift '+cabin.position.y);
  assert.ok(Math.abs(cabin.velocity.y)<.6,id+' sustained cruise sink/climb '+cabin.velocity.y);
  assert.ok(cabin.velocity.length()>profile.rotationSpeed,id+' adequate cruise speed');

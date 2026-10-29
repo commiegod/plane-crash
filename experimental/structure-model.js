@@ -1,7 +1,7 @@
 import * as T from '../assets/three.module.js';
 import {GLTFLoader} from '../assets/GLTFLoader.js';
 import {mergeGeometries} from '../assets/BufferGeometryUtils.js';
-import {fleetProfile} from './fleet-profiles.js?v=cruise-20261029';
+import {fleetProfile} from './fleet-profiles.js?v=stall-20261029';
 import {PARTS} from './structure-physics.js';
 // Mutually exclusive half-space partitions keep the original texture coordinates.
 export function clipPolygon(poly,axis,cut,sign){const out=[];for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],da=(a[axis]-cut)*sign,db=(b[axis]-cut)*sign;if(da>=0)out.push(a);if((da>=0)!==(db>=0)){const t=da/(da-db);out.push(a.map((x,k)=>x+(b[k]-x)*t));}}return out;}

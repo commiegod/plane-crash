@@ -15,6 +15,8 @@ const tuning={
  dc10:[180000,339,600000,3,-15,18,18],
  b747:[280000,541,900000,3.4,-21,23,21]
 };
+// Distinct gameplay envelopes, not manufacturer-certified stall limits.
+const stallTuning={c172:[.28,.28],twin:[.26,.24],dc3:[.29,.28],a320:[.25,.22],b737:[.25,.22],b727:[.26,.23],dc9:[.26,.23],g650:[.25,.22],c130:[.29,.28],dc10:[.26,.24],b747:[.27,.25]};
 const gears={
  c172:/^(Left|Right|Nose)Wheel/,
  twin:/^SenecaII\/(GearLeft|GearRight|NLG|RightMainGearCover|LeftMainGearCover)/,
@@ -36,7 +38,7 @@ export function fleetProfile(id='c172'){
  // Balance modeled wing/body drag and rigid-body damping at the cruise start.
  const cruiseDrag=.5*1.225*cruiseSpeed**2*area*(.025+.055*.65**2)+.48*scale**2*cruiseSpeed**2-mass*Math.log(.988)*cruiseSpeed;
  const cruiseThrottle=Math.min(.95,cruiseDrag/thrust+.01);
- return {...asset,mass,area,thrust,width,tail,nose,tip,scale,massScale,gearPattern:gears[id],engines,rotationSpeed,cruiseSpeed,cruiseThrottle,
+ return {...asset,mass,area,thrust,width,tail,nose,tip,scale,massScale,gearPattern:gears[id],engines,rotationSpeed,cruiseSpeed,cruiseThrottle,stallAngle:stallTuning[id][0],stallWidth:stallTuning[id][1],
   regions:{tail:[[2,tail,-1]],nose:[[2,nose,1],[0,-width,1],[0,width,-1]],cabin:[[2,tail,1],[2,nose,-1],[0,-width,1],[0,width,-1]],leftInner:[[2,tail,1],[0,-width,-1],[0,-tip,1]],leftTip:[[2,tail,1],[0,-tip,-1]],rightInner:[[2,tail,1],[0,width,1],[0,tip,-1]],rightTip:[[2,tail,1],[0,tip,1]]}};
 }
 export const FLEET_IDS=Object.keys(tuning);

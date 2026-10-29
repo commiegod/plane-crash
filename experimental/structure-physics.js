@@ -1,3 +1,4 @@
+import {wingStall,flightStall} from './stall.js?v=stall-20261029';
 import * as C from '../assets/cannon-es.js';
 export const STEP=1/120;
 const v=(x=0,y=0,z=0)=>new C.Vec3(x,y,z),clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
@@ -17,7 +18,7 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
  world.addContactMaterial(new C.ContactMaterial(groundMat,wheelMat,{friction:.035*STEP,restitution:.04,contactEquationStiffness:1e8}));
  world.defaultContactMaterial.friction=.4*STEP;world.defaultContactMaterial.restitution=.08;
  const ground=new C.Body({mass:0,material:groundMat,shape:new C.Plane()});ground.quaternion.setFromEuler(-Math.PI/2,0,0);ground.surface='terrain';if(installEnvironment)installEnvironment(world,groundMat);else world.addBody(ground);
- const bodies={},joints=[],events=[],obstacles=[],hits=[];let time=0,accumulator=0,droppedTime=0;const controls={pitch:0,roll:0};let cruiseTrim=0,neutralTime=0;
+ const bodies={},joints=[],events=[],obstacles=[],hits=[];let time=0,accumulator=0,droppedTime=0;const controls={pitch:0,roll:0};let cruiseTrim=0,neutralTime=0;let stall={severity:0,warning:false,stalled:false,buffet:0};
  const settings={flight:[0,70,-140,0,0,40],wing:[0,4,-22,0,0,40],gear:[0,5,-35,0,-6,24],runway:[0,1.55,-80,0,0,0],belly:[0,1.8,-35,0,-1,25]};
  const spawn=settings[scenario]||settings.flight;
  for(const [id,def] of Object.entries(definitions)){
@@ -53,15 +54,15 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
   neutralTime=Math.abs(input.pitch||0)<.025?neutralTime+STEP:0;
   input={...input,...controls};
   const cabin=bodies.cabin,omega=cabin.vectorToLocalFrame(cabin.angularVelocity),local=cabin.vectorToLocalFrame(cabin.velocity),speed=Math.max(0,local.z),q=.5*1.225*speed*speed;
-  if(aero){for(const [id,cfg] of Object.entries(parts)){
+  if(aero){stall=flightStall(local,profile,stall,STEP);for(const [id,cfg] of Object.entries(parts)){
    const b=bodies[id];if(!b)continue;
    const air=b.vectorToLocalFrame(b.velocity),forward=Math.max(0,air.z),pressure=.5*1.225*forward*forward;
-   if(cfg.area){const alpha=Math.atan2(-air.y,Math.max(3,forward));let cl=clamp(.65+4.6*alpha+clamp(input.flaps||0,0,1)*.3,-1.1,1.4);if(Math.abs(alpha)>.28)cl*=Math.max(.12,1-(Math.abs(alpha)-.28)*2.8);
+   if(cfg.area){const alpha=Math.atan2(-air.y,Math.max(3,forward));let cl=clamp(.65+4.6*alpha+clamp(input.flaps||0,0,1)*.3,-1.1,1.4);const wingLoss=wingStall(alpha,profile);cl*=wingLoss.liftFactor;
     const rightAxis=cabin.vectorToWorldFrame(v(1,0,0)),upAxis=cabin.vectorToWorldFrame(v(0,1,0));
     const bank=Math.atan2(rightAxis.y,upAxis.y);
     const connected=attached(id),desiredRoll=-input.roll*.45/Math.pow(scale,.15)-bank*.4*Math.max(0,1-Math.abs(input.roll)*4);
     const aileron=connected?(id.startsWith('left')?1:-1)*(damagedWing?input.roll*.19:clamp((omega.z-desiredRoll)*.35,-.13,.13))*Math.min(1,((profile?.rotationSpeed||31)*1.3/Math.max(1,forward))**2):0;
-    b.applyLocalForce(v(0,pressure*cfg.area*(cl+aileron),-pressure*cfg.area*(.025+.055*cl*cl+clamp(input.flaps||0,0,1)*.04)),v(0,0,profile?.liftOffset||0));
+    b.applyLocalForce(v(0,pressure*cfg.area*(cl+aileron*(1-.6*wingLoss.severity)),-pressure*cfg.area*(.025+.055*cl*cl+clamp(input.flaps||0,0,1)*.04+wingLoss.drag)),v(0,0,profile?.liftOffset||0));
    }else b.applyLocalForce(v(-air.x*Math.abs(air.x)*.8*scale*scale,-air.y*Math.abs(air.y)*.35*scale*scale,-air.z*Math.abs(air.z)*.08*scale*scale),v());
   }
   if(!profile||profile.id==='c172'){if(attached('nose'))bodies.nose.applyLocalForce(v(0,0,clamp(input.throttle||0,0,1)*(profile?.thrust||3000)),v());
@@ -74,7 +75,7 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
   // it cannot level a stalled, damaged, inverted, or unpowered aircraft.
   const healthy=['nose','tail','leftInner','leftTip','rightInner','rightTip'].every(attached);
   const neutral=clamp((neutralTime-.4)/1.2,0,1);
-  const trimEnvelope=healthy&&input.trimAllowed!==false&&(input.engines||[1]).every(power=>power>.5)&&(input.throttle||0)>.15&&Math.abs(alpha)<.2&&speed>(profile?.rotationSpeed||31)*.9&&speed<(profile?.rotationSpeed||31)*1.65&&cabin.vectorToWorldFrame(v(0,1,0)).y>.75&&cabin.position.y-surfaceHeight(cabin.position.x,cabin.position.z)>(profile?.clearance||1.5)+8;
+  const trimEnvelope=!stall.warning&&!stall.stalled&&healthy&&input.trimAllowed!==false&&(input.engines||[1]).every(power=>power>.5)&&(input.throttle||0)>.15&&Math.abs(alpha)<.2&&speed>(profile?.rotationSpeed||31)*.9&&speed<(profile?.rotationSpeed||31)*1.65&&cabin.vectorToWorldFrame(v(0,1,0)).y>.75&&cabin.position.y-surfaceHeight(cabin.position.x,cabin.position.z)>(profile?.clearance||1.5)+8;
   const up=cabin.vectorToWorldFrame(v(0,1,0)),forwardAxis=cabin.vectorToWorldFrame(v(0,0,1));
   const liftTrim=clamp(((profile?.mass||1030)*9.81/(Math.max(1,q)*(profile?.area||16.2)*Math.max(.75,up.y))-.65-(input.flaps||0)*.3)/4.6,-.08,.12);
   const pitchError=liftTrim-Math.asin(clamp(forwardAxis.y,-1,1));
@@ -84,9 +85,13 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
   const pitchRate=clamp(q*(-(input.pitch+trim)*(profile&&profile.id!=='c172'?25:15)+alpha*70-1.5)/8000,-.35,.35);
   // Bound commanded pitch/yaw rates before scaling damping to aircraft size.
   // Control inputs cannot demand unbounded rotation as dynamic pressure grows.
+  // Apply a soft roll-rate limit to the intact assembly, not just the light cabin.
+  // Forces still pass through the joints; detached wings retain their own motion.
+  const rollInertia=Object.values(bodies).filter(b=>attached(b.part)).reduce((sum,b)=>sum+b.inertia.z+b.mass*((b.home.x-cabin.home.x)**2+(b.home.y-cabin.home.y)**2),0);
+  const rollGuard=!damagedWing?Math.sign(omega.z)*Math.max(0,Math.abs(omega.z)-.55)*rollInertia*4:0;
   const torque=v((tail*pitchRate-omega.x)*8000*massScale*scale*scale,
    (tail*clamp((local.x*q*.04+input.roll*q*.08)/4000,-.2,.2)-omega.y)*4000*massScale*scale*scale,
-   -cabin.inertia.z*omega.z*.8*wingAuthority*authority);
+   -cabin.inertia.z*omega.z*.8*wingAuthority*authority-rollGuard);
   cabin.torque.vadd(cabin.vectorToWorldFrame(torque),cabin.torque);
   }
   if(cabin.position.y-surfaceHeight(cabin.position.x,cabin.position.z)<(profile?.clearance||1.5)+1){const steer=cabin.vectorToWorldFrame(v(0,(input.roll||0)*Math.min(Math.abs(local.z),12)*40*massScale*scale*scale/(1+Math.abs(local.z)/20),0));cabin.torque.vadd(steer,cabin.torque);
@@ -107,6 +112,6 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
  }
  return {world,bodies,joints,events,obstacles,hits,attached,step,breakJoint,
   advance(dt,input={}){const accepted=Math.min(.1,Math.max(0,dt));droppedTime+=Math.max(0,dt-accepted);accumulator+=accepted;let steps=0;while(accumulator>=STEP&&steps<12){step(input);accumulator-=STEP;steps++;}return steps;},
-  get time(){return time;},get droppedTime(){return droppedTime;}
+  get stall(){return {...stall};},get time(){return time;},get droppedTime(){return droppedTime;}
  };
 }
