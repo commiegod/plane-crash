@@ -17,7 +17,7 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
  world.addContactMaterial(new C.ContactMaterial(groundMat,wheelMat,{friction:.035*STEP,restitution:.04,contactEquationStiffness:1e8}));
  world.defaultContactMaterial.friction=.4*STEP;world.defaultContactMaterial.restitution=.08;
  const ground=new C.Body({mass:0,material:groundMat,shape:new C.Plane()});ground.quaternion.setFromEuler(-Math.PI/2,0,0);ground.surface='terrain';if(installEnvironment)installEnvironment(world,groundMat);else world.addBody(ground);
- const bodies={},joints=[],events=[],obstacles=[],hits=[];let time=0,accumulator=0,droppedTime=0;
+ const bodies={},joints=[],events=[],obstacles=[],hits=[];let time=0,accumulator=0,droppedTime=0;const controls={pitch:0,roll:0};
  const settings={flight:[0,70,-140,0,0,40],wing:[0,4,-22,0,0,40],gear:[0,5,-35,0,-6,24],runway:[0,1.55,-80,0,0,0],belly:[0,1.8,-35,0,-1,25]};
  const spawn=settings[scenario]||settings.flight;
  for(const [id,def] of Object.entries(definitions)){
@@ -43,24 +43,38 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
  if(scenario==='wing'){
   const wall=new C.Body({mass:0,material:groundMat,shape:new C.Box(v(1,2.5,2)),position:v(-4.4,2.5,0)});world.addBody(wall);obstacles.push(wall);
  }
- function forces(input){input={...input,pitch:clamp(input.pitch||0,-1,1),roll:clamp(input.roll||0,-1,1)};
-  const cabin=bodies.cabin,local=cabin.vectorToLocalFrame(cabin.velocity),speed=Math.max(0,local.z),q=.5*1.225*speed*speed;
+ function forces(input){
+  // Shape stick travel, then slew the surfaces at the fixed physics rate.
+  // After wing loss, retain direct surface authority to counter the asymmetric lift.
+  const damagedWing=!attached('leftTip')||!attached('rightTip');
+  const raw=clamp(input.roll||0,-1,1),u=Math.sign(raw)*Math.max(0,(Math.abs(raw)-.06)/.94),rollTarget=damagedWing?raw:.4*u+.6*u*u*u;
+  controls.roll+=(rollTarget-controls.roll)*(1-Math.exp(-STEP/.28));
+  controls.pitch+=(clamp(input.pitch||0,-1,1)-controls.pitch)*(1-Math.exp(-STEP/.25));
+  input={...input,...controls};
+  const cabin=bodies.cabin,omega=cabin.vectorToLocalFrame(cabin.angularVelocity),local=cabin.vectorToLocalFrame(cabin.velocity),speed=Math.max(0,local.z),q=.5*1.225*speed*speed;
   if(aero){for(const [id,cfg] of Object.entries(parts)){
    const b=bodies[id];if(!b)continue;
    const air=b.vectorToLocalFrame(b.velocity),forward=Math.max(0,air.z),pressure=.5*1.225*forward*forward;
    if(cfg.area){const alpha=Math.atan2(-air.y,Math.max(3,forward));let cl=clamp(.65+4.6*alpha+clamp(input.flaps||0,0,1)*.3,-1.1,1.4);if(Math.abs(alpha)>.28)cl*=Math.max(.12,1-(Math.abs(alpha)-.28)*2.8);
-    const connected=attached(id),aileron=connected?(id.startsWith('left')?1:-1)*(input.roll||0)*.19:0;
+    const connected=attached(id),desiredRoll=-input.roll*.45/Math.pow(scale,.15);
+    const aileron=connected?(id.startsWith('left')?1:-1)*(damagedWing?input.roll*.19:clamp((omega.z-desiredRoll)*.35,-.13,.13))*Math.min(1,((profile?.rotationSpeed||31)*1.3/Math.max(1,forward))**2):0;
     b.applyLocalForce(v(0,pressure*cfg.area*(cl+aileron),-pressure*cfg.area*(.025+.055*cl*cl+clamp(input.flaps||0,0,1)*.04)),v(0,0,profile?.liftOffset||0));
    }else b.applyLocalForce(v(-air.x*Math.abs(air.x)*.8*scale*scale,-air.y*Math.abs(air.y)*.35*scale*scale,-air.z*Math.abs(air.z)*.08*scale*scale),v());
   }
   if(!profile||profile.id==='c172'){if(attached('nose'))bodies.nose.applyLocalForce(v(0,0,clamp(input.throttle||0,0,1)*(profile?.thrust||3000)),v());
   }else for(const [index,e] of profile.engines.entries()){if(!attached(e.part))continue;const body=bodies[e.part],home=body.home;body.applyLocalForce(v(0,0,clamp(input.throttle||0,0,1)*(input.engines?.[index]??1)*profile.thrust/profile.engines.length),v(e.position.x-home.x,e.position.y-home.y,e.position.z-home.z));}
-  const omega=cabin.vectorToLocalFrame(cabin.angularVelocity),alpha=Math.atan2(-local.y,Math.max(3,speed));
+  const alpha=Math.atan2(-local.y,Math.max(3,speed));
   const tail=attached('tail')?1:0,wingAuthority=(attached('leftInner')+attached('rightInner'))/2;
-  const torque=v(tail*q*(-(input.pitch||0)*(profile&&profile.id!=='c172'?25:15)+alpha*70-1.5)-omega.x*8000,tail*(local.x*q*.04+(input.roll||0)*q*.08)-omega.y*4000,-omega.z*2500*wingAuthority);
-  torque.scale(massScale*scale*scale,torque);cabin.torque.vadd(cabin.vectorToWorldFrame(torque),cabin.torque);
+  const authority=clamp((speed/((profile?.rotationSpeed||31)*.8))**2,0,1);
+  const pitchRate=clamp(q*(-input.pitch*(profile&&profile.id!=='c172'?25:15)+alpha*70-1.5)/8000,-.35,.35);
+  // Bound commanded pitch/yaw rates before scaling damping to aircraft size.
+  // Control inputs cannot demand unbounded rotation as dynamic pressure grows.
+  const torque=v((tail*pitchRate-omega.x)*8000*massScale*scale*scale,
+   (tail*clamp((local.x*q*.04+input.roll*q*.08)/4000,-.2,.2)-omega.y)*4000*massScale*scale*scale,
+   -cabin.inertia.z*omega.z*.8*wingAuthority*authority);
+  cabin.torque.vadd(cabin.vectorToWorldFrame(torque),cabin.torque);
   }
-  if(cabin.position.y-surfaceHeight(cabin.position.x,cabin.position.z)<(profile?.clearance||1.5)+1){const steer=cabin.vectorToWorldFrame(v(0,(input.roll||0)*Math.min(Math.abs(local.z),12)*90*massScale*scale*scale,0));cabin.torque.vadd(steer,cabin.torque);
+  if(cabin.position.y-surfaceHeight(cabin.position.x,cabin.position.z)<(profile?.clearance||1.5)+1){const steer=cabin.vectorToWorldFrame(v(0,(input.roll||0)*Math.min(Math.abs(local.z),12)*40*massScale*scale*scale/(1+Math.abs(local.z)/20),0));cabin.torque.vadd(steer,cabin.torque);
    if(input.reverse&&attached('nose'))cabin.applyLocalForce(v(0,0,clamp(-3-local.z,-3,3)*1600*massScale),v());
    if(input.brake)for(const b of Object.values(bodies))if(attached(b.part))b.applyForce(v(-b.velocity.x*b.mass*2,0,-b.velocity.z*b.mass*2));
   }

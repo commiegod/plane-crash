@@ -1,7 +1,7 @@
 import {createBuildingStructure} from './building-structure.js';
 import * as C from './assets/cannon-es.js';
 import * as T from './assets/three.module.js';
-import {createStructure} from './experimental/structure-physics.js?v=fleet-20261028';
+import {createStructure} from './experimental/structure-physics.js?v=steering-20261029';
 import {loadStructureModel} from './experimental/structure-model.js?v=fleet-20261028';
 import {terrainMeshHeight} from './crash-model.js';
 export function airportBuildingBoxes(){

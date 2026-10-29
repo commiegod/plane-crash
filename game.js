@@ -348,7 +348,7 @@ $('settings-toggle').onclick=()=>{const el=$('settings');el.classList.toggle('hi
 $('close-settings').onclick=()=>{$('settings').classList.add('hidden');$('settings-toggle').setAttribute('aria-expanded','false')};
 $('show-report').onclick=()=>{if(structuralIncident||(state==='paused'?saved:state)==='crashed'||cabin.final||reportShown||landingMessage)showReport(!structuralIncident&&landingMessage&&(state==='paused'?saved:state)!=='crashed')};
 $('dismiss-report').onclick=()=>{$('panel').classList.add('hidden')};
-async function prepareStructure(id){if(structuralModel?.profile?.id===id)return;structuralModule??=await import('./airport-structure.js?v=fleet-20261028');const next=await structuralModule.prepareAirportStructure(id);structuralModel?.dispose?.();structuralModel=next;}
+async function prepareStructure(id){if(structuralModel?.profile?.id===id)return;structuralModule??=await import('./airport-structure.js?v=steering-20261029');const next=await structuralModule.prepareAirportStructure(id);structuralModel?.dispose?.();structuralModel=next;}
 const setup=createSetup({start:startConfigured,prepare:async id=>{await graphics.loadAircraft(id);if(structuralEnabled)await prepareStructure(id)},opening(){state='ready';clearKeys();$('panel').classList.add('hidden')},preview(config){graphics.loadAircraft(config.aircraft);aircraft=config.aircraft;livery=LIVERIES.find(l=>l.id===config.livery);systems=createSystems(spec());pos=V(540,190,350);yaw=0;pitch=0;roll=0;gear=!!spec().fixedGear;buildAircraft();graphics.resetCamera()}});
 $('new-flight').onclick=()=>setup.open();
 $('more-controls').onclick=()=>{const el=$('extra-controls');el.classList.toggle('hidden');$('more-controls').setAttribute('aria-expanded',String(!el.classList.contains('hidden')))};
