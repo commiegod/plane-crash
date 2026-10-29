@@ -6,7 +6,8 @@ const harness=source.slice(source.indexOf("const fs=require"),source.indexOf('\n
 eval(harness+`\n(async()=>{
  const module=await import('../airport-structure.js');
  const {definitions:defs}=await import('../tests/structure-fixture.mjs');
- context.physicsModule=module;context.modelFixture={definitions:defs,groups:Object.fromEntries(Object.keys(defs).map(id=>[id,{position:{copy(){}},quaternion:{copy(){}},children:[]}]))};
+ const {fleetProfile}=await import('../experimental/fleet-profiles.js');
+ context.physicsModule=module;context.modelFixture={definitions:defs,profile:fleetProfile('c172'),groups:Object.fromEntries(Object.keys(defs).map(id=>[id,{position:{copy(){}},quaternion:{copy(){}},children:[]}]))};
  run("structuralEnabled=true;structuralModule=physicsModule;structuralModel=modelFixture;startConfigured({aircraft:'c172',mode:'departure',start:'runway',runway:'01',passengers:3,fuel:100});for(let i=0;i<180;i++)step(1/60)");
  assert.equal(run('structuralIncident'),false);assert.equal(run('cabinTotals(cabin).fatalities'),0);
  run("state='parked';startPushback();for(let i=0;i<120;i++)step(1/60)");assert(run('vel.z<-.1'));run('stopPushback();step(1/60)');assert.equal(run('state'),'taxi');
@@ -15,5 +16,10 @@ eval(harness+`\n(async()=>{
  run('pause()');const time=run('structuralSession.sim.time');run('step(1)');assert.equal(run('structuralSession.sim.time'),time);run('pause();showReport(false)');assert.equal(run('reportShown'),true);
  run('startConfigured(currentConfig);step(1/60)');assert.equal(run('structuralIncident'),false);assert.equal(run('structuralSession.sim.events.length'),0);
  run("startConfigured({...currentConfig,aircraft:'b737'});step(1/60)");assert.equal(run('structuralSession'),null);
+ run("startConfigured({...currentConfig,aircraft:'c172',mode:'free'});step(1/120)");
+ assert(Math.abs(run('len(vel)-structuralModel.profile.cruiseSpeed'))<.1,'exploration starts at structural cruise speed');
+ assert.equal(run('throttle'),run('structuralModel.profile.cruiseThrottle'));
+ run("startConfigured({...currentConfig,mode:'approach'});step(1/120)");
+ assert.equal(run('throttle'),.49,'landing practice retains approach power');
  console.log('PASS main-game experimental pushback/stop, takeoff, wing loss, optional report, pause, restart, other aircraft isolation');
 })().catch(error=>{console.error(error);process.exitCode=1});`);

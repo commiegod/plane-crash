@@ -17,7 +17,7 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
  world.addContactMaterial(new C.ContactMaterial(groundMat,wheelMat,{friction:.035*STEP,restitution:.04,contactEquationStiffness:1e8}));
  world.defaultContactMaterial.friction=.4*STEP;world.defaultContactMaterial.restitution=.08;
  const ground=new C.Body({mass:0,material:groundMat,shape:new C.Plane()});ground.quaternion.setFromEuler(-Math.PI/2,0,0);ground.surface='terrain';if(installEnvironment)installEnvironment(world,groundMat);else world.addBody(ground);
- const bodies={},joints=[],events=[],obstacles=[],hits=[];let time=0,accumulator=0,droppedTime=0;const controls={pitch:0,roll:0};
+ const bodies={},joints=[],events=[],obstacles=[],hits=[];let time=0,accumulator=0,droppedTime=0;const controls={pitch:0,roll:0};let cruiseTrim=0,neutralTime=0;
  const settings={flight:[0,70,-140,0,0,40],wing:[0,4,-22,0,0,40],gear:[0,5,-35,0,-6,24],runway:[0,1.55,-80,0,0,0],belly:[0,1.8,-35,0,-1,25]};
  const spawn=settings[scenario]||settings.flight;
  for(const [id,def] of Object.entries(definitions)){
@@ -50,13 +50,16 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
   const raw=clamp(input.roll||0,-1,1),u=Math.sign(raw)*Math.max(0,(Math.abs(raw)-.06)/.94),rollTarget=damagedWing?raw:.4*u+.6*u*u*u;
   controls.roll+=(rollTarget-controls.roll)*(1-Math.exp(-STEP/.28));
   controls.pitch+=(clamp(input.pitch||0,-1,1)-controls.pitch)*(1-Math.exp(-STEP/.25));
+  neutralTime=Math.abs(input.pitch||0)<.025?neutralTime+STEP:0;
   input={...input,...controls};
   const cabin=bodies.cabin,omega=cabin.vectorToLocalFrame(cabin.angularVelocity),local=cabin.vectorToLocalFrame(cabin.velocity),speed=Math.max(0,local.z),q=.5*1.225*speed*speed;
   if(aero){for(const [id,cfg] of Object.entries(parts)){
    const b=bodies[id];if(!b)continue;
    const air=b.vectorToLocalFrame(b.velocity),forward=Math.max(0,air.z),pressure=.5*1.225*forward*forward;
    if(cfg.area){const alpha=Math.atan2(-air.y,Math.max(3,forward));let cl=clamp(.65+4.6*alpha+clamp(input.flaps||0,0,1)*.3,-1.1,1.4);if(Math.abs(alpha)>.28)cl*=Math.max(.12,1-(Math.abs(alpha)-.28)*2.8);
-    const connected=attached(id),desiredRoll=-input.roll*.45/Math.pow(scale,.15);
+    const rightAxis=cabin.vectorToWorldFrame(v(1,0,0)),upAxis=cabin.vectorToWorldFrame(v(0,1,0));
+    const bank=Math.atan2(rightAxis.y,upAxis.y);
+    const connected=attached(id),desiredRoll=-input.roll*.45/Math.pow(scale,.15)-bank*.4*Math.max(0,1-Math.abs(input.roll)*4);
     const aileron=connected?(id.startsWith('left')?1:-1)*(damagedWing?input.roll*.19:clamp((omega.z-desiredRoll)*.35,-.13,.13))*Math.min(1,((profile?.rotationSpeed||31)*1.3/Math.max(1,forward))**2):0;
     b.applyLocalForce(v(0,pressure*cfg.area*(cl+aileron),-pressure*cfg.area*(.025+.055*cl*cl+clamp(input.flaps||0,0,1)*.04)),v(0,0,profile?.liftOffset||0));
    }else b.applyLocalForce(v(-air.x*Math.abs(air.x)*.8*scale*scale,-air.y*Math.abs(air.y)*.35*scale*scale,-air.z*Math.abs(air.z)*.08*scale*scale),v());
@@ -66,7 +69,19 @@ export function createStructure(definitions,{scenario='flight',aero=true,surface
   const alpha=Math.atan2(-local.y,Math.max(3,speed));
   const tail=attached('tail')?1:0,wingAuthority=(attached('leftInner')+attached('rightInner'))/2;
   const authority=clamp((speed/((profile?.rotationSpeed||31)*.8))**2,0,1);
-  const pitchRate=clamp(q*(-input.pitch*(profile&&profile.id!=='c172'?25:15)+alpha*70-1.5)/8000,-.35,.35);
+  // Gentle auto-trim near neutral makes ordinary cruise manageable on touch controls.
+  // It only acts on a healthy, powered, upright airframe above stall speed;
+  // it cannot level a stalled, damaged, inverted, or unpowered aircraft.
+  const healthy=['nose','tail','leftInner','leftTip','rightInner','rightTip'].every(attached);
+  const neutral=clamp((neutralTime-.4)/1.2,0,1);
+  const trimEnvelope=healthy&&input.trimAllowed!==false&&(input.engines||[1]).every(power=>power>.5)&&(input.throttle||0)>.15&&Math.abs(alpha)<.2&&speed>(profile?.rotationSpeed||31)*.9&&speed<(profile?.rotationSpeed||31)*1.65&&cabin.vectorToWorldFrame(v(0,1,0)).y>.75&&cabin.position.y-surfaceHeight(cabin.position.x,cabin.position.z)>(profile?.clearance||1.5)+8;
+  const up=cabin.vectorToWorldFrame(v(0,1,0)),forwardAxis=cabin.vectorToWorldFrame(v(0,0,1));
+  const liftTrim=clamp(((profile?.mass||1030)*9.81/(Math.max(1,q)*(profile?.area||16.2)*Math.max(.75,up.y))-.65-(input.flaps||0)*.3)/4.6,-.08,.12);
+  const pitchError=liftTrim-Math.asin(clamp(forwardAxis.y,-1,1));
+  if(trimEnvelope)cruiseTrim=clamp(cruiseTrim+pitchError*.12*STEP*neutral,-.35,.35);
+  else cruiseTrim*=Math.exp(-STEP*2);
+  const trim=trimEnvelope?neutral*clamp(cruiseTrim+pitchError*1.5,-.4,.4):0;
+  const pitchRate=clamp(q*(-(input.pitch+trim)*(profile&&profile.id!=='c172'?25:15)+alpha*70-1.5)/8000,-.35,.35);
   // Bound commanded pitch/yaw rates before scaling damping to aircraft size.
   // Control inputs cannot demand unbounded rotation as dynamic pressure grows.
   const torque=v((tail*pitchRate-omega.x)*8000*massScale*scale*scale,

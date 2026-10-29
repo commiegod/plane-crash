@@ -269,7 +269,13 @@ function recordStructuralIncident(cause,severity){
 function stepStructural(dt){
  if(!structuralSession){
   if(onGround())pos.y=terrainMeshHeight(pos.x,pos.z,ground)+(structuralModel.profile?.clearance||1.5)+.05;
-  else parking=false;
+  else {
+   parking=false;
+   // Start exploration at the selected structural aircraft's sustainable cruise.
+   // Landing practice retains its approach speed and descent.
+   const p=structuralModel.profile;
+   if(mission!=='approach'&&p?.cruiseSpeed){vel=rotate(V(0,0,p.cruiseSpeed),pitch,0,yaw);throttle=p.cruiseThrottle;}
+  }
   structuralSession=structuralModule.startAirportStructure(structuralModel,ground,{pos,vel,pitch,roll,yaw},graphics.buildingSections?.());
   structuralModel.setPaint?.(livery?.id);graphics.setStructure(structuralModel);assist=false;taxiAssist=false;graphics.resetCamera();gearUI();
  }
@@ -278,7 +284,7 @@ function stepStructural(dt){
  if(tickSystems(systems,dt,throttle,spec())&&!structuralIncident)crash(true,'FIRE DAMAGE');
  throttle=clamp(throttle+((keys.more?1:0)-(keys.less?1:0))*dt*.35,0,1);
  const prev=state,authority=systems.controlsFailed?.18:1;
- const result=structuralSession.update(dt,{throttle:parking?0:throttle*(aircraft==='c172'?enginePower(systems):1),engines:systems.engines.map(e=>e.running&&systems.fuel>0?1:0),gear,pitch:((keys.down?1:0)-(keys.up?1:0)+stick.y)*authority,roll:((keys.right?1:0)-(keys.left?1:0)-stick.x)*authority,flaps,brake:parking||keys.brake,reverse:state==='pushback'&&!parking});
+ const result=structuralSession.update(dt,{throttle:parking?0:throttle*(aircraft==='c172'?enginePower(systems):1),engines:systems.engines.map(e=>e.running&&systems.fuel>0?1:0),trimAllowed:!systems.controlsFailed,gear,pitch:((keys.down?1:0)-(keys.up?1:0)+stick.y)*authority,roll:((keys.right?1:0)-(keys.left?1:0)-stick.x)*authority,flaps,brake:parking||keys.brake,reverse:state==='pushback'&&!parking});
  pos=result.pos;vel=result.vel;pitch=result.pitch;roll=result.roll;yaw=result.yaw;
  structuralAirTime=result.grounded?0:structuralAirTime+dt;
  if(prev==='pushback'){if(!parking)pushRemaining-=dt*10;if(pushRemaining<=0)stopPushback();}
@@ -348,7 +354,7 @@ $('settings-toggle').onclick=()=>{const el=$('settings');el.classList.toggle('hi
 $('close-settings').onclick=()=>{$('settings').classList.add('hidden');$('settings-toggle').setAttribute('aria-expanded','false')};
 $('show-report').onclick=()=>{if(structuralIncident||(state==='paused'?saved:state)==='crashed'||cabin.final||reportShown||landingMessage)showReport(!structuralIncident&&landingMessage&&(state==='paused'?saved:state)!=='crashed')};
 $('dismiss-report').onclick=()=>{$('panel').classList.add('hidden')};
-async function prepareStructure(id){if(structuralModel?.profile?.id===id)return;structuralModule??=await import('./airport-structure.js?v=steering-20261029');const next=await structuralModule.prepareAirportStructure(id);structuralModel?.dispose?.();structuralModel=next;}
+async function prepareStructure(id){if(structuralModel?.profile?.id===id)return;structuralModule??=await import('./airport-structure.js?v=cruise-20261029');const next=await structuralModule.prepareAirportStructure(id);structuralModel?.dispose?.();structuralModel=next;}
 const setup=createSetup({start:startConfigured,prepare:async id=>{await graphics.loadAircraft(id);if(structuralEnabled)await prepareStructure(id)},opening(){state='ready';clearKeys();$('panel').classList.add('hidden')},preview(config){graphics.loadAircraft(config.aircraft);aircraft=config.aircraft;livery=LIVERIES.find(l=>l.id===config.livery);systems=createSystems(spec());pos=V(540,190,350);yaw=0;pitch=0;roll=0;gear=!!spec().fixedGear;buildAircraft();graphics.resetCamera()}});
 $('new-flight').onclick=()=>setup.open();
 $('more-controls').onclick=()=>{const el=$('extra-controls');el.classList.toggle('hidden');$('more-controls').setAttribute('aria-expanded',String(!el.classList.contains('hidden')))};

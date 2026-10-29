@@ -32,8 +32,11 @@ export function fleetProfile(id='c172'){
  const asset=AUTHORED_AIRCRAFT[id],data=tuning[id];if(!asset||!data)throw Error('No structural profile: '+id);
  const [mass,area,thrust,width,tail,nose,tip]=data,spec=getAircraft(id),scale=Math.sqrt(area/16.2),massScale=mass/1030;
  const engines=spec.engines.map(e=>({...e,part:id==='c172'?'nose':e.position.z<tail?'tail':e.position.x<-width?'leftInner':e.position.x>width?'rightInner':'cabin'}));
- return {...asset,mass,area,thrust,width,tail,nose,tip,scale,massScale,gearPattern:gears[id],engines,
-  rotationSpeed:id==='c172'?31:Math.sqrt(2*mass*9.81/(1.225*area*1.1)),
+ const rotationSpeed=id==='c172'?31:Math.sqrt(2*mass*9.81/(1.225*area*1.1)),cruiseSpeed=rotationSpeed*1.3;
+ // Balance modeled wing/body drag and rigid-body damping at the cruise start.
+ const cruiseDrag=.5*1.225*cruiseSpeed**2*area*(.025+.055*.65**2)+.48*scale**2*cruiseSpeed**2-mass*Math.log(.988)*cruiseSpeed;
+ const cruiseThrottle=Math.min(.95,cruiseDrag/thrust+.01);
+ return {...asset,mass,area,thrust,width,tail,nose,tip,scale,massScale,gearPattern:gears[id],engines,rotationSpeed,cruiseSpeed,cruiseThrottle,
   regions:{tail:[[2,tail,-1]],nose:[[2,nose,1],[0,-width,1],[0,width,-1]],cabin:[[2,tail,1],[2,nose,-1],[0,-width,1],[0,width,-1]],leftInner:[[2,tail,1],[0,-width,-1],[0,-tip,1]],leftTip:[[2,tail,1],[0,-tip,-1]],rightInner:[[2,tail,1],[0,width,1],[0,tip,-1]],rightTip:[[2,tail,1],[0,tip,1]]}};
 }
 export const FLEET_IDS=Object.keys(tuning);
