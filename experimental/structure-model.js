@@ -53,6 +53,22 @@ export function buildStructureModel(model,profile=fleetProfile()){profile={...pr
   // Recessed dark closures make the structural cuts readable after separation.
   if(/Inner|Tip/.test(id)){for(const x of [box.min.x+.015,box.max.x-.015]){const outward=id.startsWith('left')?x<center.x:x>center.x;if(id.endsWith('Tip')&&outward)continue;const cap=new T.Mesh(new T.BoxGeometry(.02,Math.min(.13,size.y),Math.min(1.4,size.z)),new T.MeshStandardMaterial({color:'#3c4448',roughness:.95}));cap.position.set(x-center.x,(profile.id==='c172'?.32:shapeCenter.y)-center.y,0);cap.userData.joint=id.endsWith('Inner')&&outward?id.replace('Inner','Tip'):id;cap.visible=false;group.add(cap);}}
  }
+ // Prepare a bounded second fracture tier using the authored surfaces and UVs.
+ const fragments={};
+ for(const id of ['nose','tail','leftInner','leftTip','rightInner','rightTip']){
+  const source=groups[id],box=new T.Box3();for(const mesh of source.children)if(!mesh.userData.joint){mesh.geometry.computeBoundingBox();box.union(mesh.geometry.boundingBox);}
+  const size=box.getSize(new T.Vector3()),axis=/Inner|Tip/.test(id)?0:2,key=['x','y','z'][axis];fragments[id]=[];
+  for(let i=0;i<3;i++){
+   const group=new T.Group(),lo=box.min[key]+size[key]*i/3,hi=box.min[key]+size[key]*(i+1)/3;
+   for(const mesh of source.children){if(mesh.userData.joint)continue;const geometry=partitionGeometry(mesh.geometry,[[axis,lo,1],[axis,hi,-1]]);if(!geometry.attributes.position.count){geometry.dispose();continue;}const shard=new T.Mesh(geometry,mesh.material);shard.castShadow=shard.receiveShadow=true;group.add(shard);}
+   if(!group.children.length)continue;
+   const bounds=new T.Box3().setFromObject(group),center=bounds.getCenter(new T.Vector3()),half=bounds.getSize(new T.Vector3()).multiplyScalar(.5);
+   for(const mesh of group.children)mesh.geometry.translate(-center.x,-center.y,-center.z);
+   const fragmentId=id+'Fragment'+i;group.userData.inactive=true;groups[fragmentId]=group;
+   fragments[id].push({id:fragmentId,center:center.toArray(),half:half.toArray().map(n=>Math.max(.025,n))});
+  }
+ }
+ function resetFractures(){for(const [id,group] of Object.entries(groups)){group.userData.retired=false;group.userData.inactive=id.includes('Fragment');}}
  let paint=null,disposed=false;
  const texturesOwned=new Set();for(const g of Object.values(groups))g.traverse(o=>{for(const value of Object.values(o.material||{}))if(value?.isTexture)texturesOwned.add(value);});
  function setPaint(id){
@@ -65,5 +81,5 @@ export function buildStructureModel(model,profile=fleetProfile()){profile={...pr
   }).catch(e=>{paint=null;console.warn('Structural aircraft paint unavailable',e);});
  }
  function dispose(){disposed=true;const materials=new Set();for(const g of Object.values(groups))g.traverse(o=>{o.geometry?.dispose();if(o.material)materials.add(o.material);});for(const m of materials)m.dispose();for(const t of texturesOwned)t.dispose();}
- return {groups,definitions,profile,setPaint,dispose};
+ return {groups,definitions,profile,fragments,resetFractures,setPaint,dispose};
 }

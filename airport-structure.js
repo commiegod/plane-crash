@@ -1,8 +1,9 @@
+import {onPavement} from './flight-config.js';
 import {createBuildingStructure} from './building-structure.js';
 import * as C from './assets/cannon-es.js';
 import * as T from './assets/three.module.js';
-import {createStructure} from './experimental/structure-physics.js?v=stall-20261029';
-import {loadStructureModel} from './experimental/structure-model.js?v=stall-20261029';
+import {createStructure} from './experimental/structure-physics.js?v=wreckage-20261030';
+import {loadStructureModel} from './experimental/structure-model.js?v=wreckage-20261030';
 import {terrainMeshHeight} from './crash-model.js';
 export function airportBuildingBoxes(){
  const b=[{x:885,y:24.5,z:1300,w:119,h:29,l:1484},{x:975,y:37.5,z:2080,w:17,h:55,l:17},{x:975,y:69.5,z:2080,w:36,h:11,l:36}];
@@ -20,10 +21,11 @@ export function installAirport(world,material,ground,sections=null){
 }
 export async function prepareAirportStructure(id='c172'){return loadStructureModel(id);}
 export function startAirportStructure(model,ground,pose,sections=null){
+ model.resetFractures?.();
  let environment;
- const sim=createStructure(model.definitions,{profile:model.profile,surfaceHeight:(x,z)=>terrainMeshHeight(x,z,ground),installEnvironment:(w,m)=>{environment=installAirport(w,m,ground,sections)},initialPose:pose});
+ const sim=createStructure(model.definitions,{profile:model.profile,fragments:model.fragments,surfaceType:(x,z)=>onPavement(x,z)?'pavement':'grass',surfaceHeight:(x,z)=>terrainMeshHeight(x,z,ground),installEnvironment:(w,m)=>{environment=installAirport(w,m,ground,sections)},initialPose:pose});
  let eventIndex=0;const rotation=new T.Euler(0,0,0,'YXZ');
- return {sim,model,buildings:environment.structures,update(dt,input){sim.advance(dt,input);for(const [id,b] of Object.entries(sim.bodies)){const group=model.groups[id];group.userData??={};group.userData.retracted=id.endsWith('Gear')&&input.gear===false&&sim.attached(id);group.position.copy(b.position);group.quaternion.copy(b.quaternion);for(const mesh of group.children)if(mesh.userData.joint)mesh.visible=sim.joints.find(j=>j.id===mesh.userData.joint).broken;}
+ return {sim,model,buildings:environment.structures,update(dt,input){sim.advance(dt,input);for(const [id,b] of Object.entries(sim.bodies)){const group=model.groups[id];group.userData??={};group.userData.retired=!!b.retired;group.userData.inactive=false;group.userData.retracted=id.endsWith('Gear')&&input.gear===false&&sim.attached(id);group.position.copy(b.position);group.quaternion.copy(b.quaternion);for(const mesh of group.children)if(mesh.userData.joint)mesh.visible=sim.joints.find(j=>j.id===mesh.userData.joint).broken;}
  const b=sim.bodies.cabin;rotation.setFromQuaternion(new T.Quaternion(b.quaternion.x,b.quaternion.y,b.quaternion.z,b.quaternion.w),'YXZ');
  const center=b.pointToWorldFrame(new C.Vec3(model.definitions.cabin.center.x,model.definitions.cabin.center.y,model.definitions.cabin.center.z).negate());
  const hits=sim.hits.splice(0),events=sim.events.slice(eventIndex);eventIndex=sim.events.length;
